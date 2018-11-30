@@ -469,14 +469,43 @@ Win32::Backup::Robocopy - a simple backup solution using robocopy
 
 =cut
 
-
 =head1 SYNOPSIS
+
+    use Win32::Backup::Robocopy;
+
+    # RUN mode 
+    my $bkp = Win32::Backup::Robocopy->new(
+            name 	=> 'my_perl_archive',        
+            source	=> 'x:\scripts',             
+            history	=> 1                         
+    );
+    my( $stdout, $stderr, $exit, $exitstr, $createdfolder ) = $bkp->run();
+
+	
+    # JOB mode 
+    my $bkp = Win32::Backup::Robocopy->new( configuration => './my_conf.json' );
+    $bkp->job( 	
+                name=>'my_backup_name',          
+                src=>'./a_folder',               
+                history=>1,                      
+				
+                cron=>'0 0 25 12 *',             
+                first_time_run=>1                
+    );
+    $bkp->runjobs;              
+
+
+
+
+=head1 DESCRIPTION
 
 This module is a wrapper around C<robocopy.exe> and try to make it's behaviour as simple as possible
 using a serie of sane defaults while letting you the possibility to leverage the C<robocopy.exe>
 invocation in your own way.
 
-The module offers two modes of being used: the RUN mode and the JOB mode.
+The module offers two modes of being used: the RUN mode and the JOB mode. In the RUN mode a backup object created via C<new> is a_folder
+single backup intended to be run using the C<run> method. In the JOB mode the object is a container of scheduled jobs filled reading
+a JSON configuration file and/or using the C<job> method. C<runjobs> is then used to cycle the job list and see if some job has to be run.
 
 In the RUN mode, if not C<history> is specified as true, the  backup object (using the C<run> method) will copy all files to one folder, named
 as the name of the backup (the mandatory C<name> parameter used while creating the object). All successive
