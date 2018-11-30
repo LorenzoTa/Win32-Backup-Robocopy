@@ -12,7 +12,7 @@ note("creating a backup scenario  in $tbasedir");
 make_path( $tbasedir );
 
 # new in JOB mode just needs conf croaks if destination drive does not exists
-my $bkp = Win32::Backup::Robocopy->new( conf => 'my_config.json');
+my $bkp = Win32::Backup::Robocopy->new( conf => 'my_config.json' );
 ok ( ref $bkp->{jobs} eq 'ARRAY', 'jobs is an array reference');
 
 # config is a valid alias for conf
@@ -43,6 +43,7 @@ dies_ok { $bkp->job(cron=>'0 0 25 X X',src=>'.',name=>'test') } 'job method  exp
 
 # a correct invocation
 $bkp->job(name=>'test',src=>'.',cron=>'0 0 25 1 *');
+
 
 # jobs queue has one element
 ok(@{$bkp->{jobs}} == 1, 'first job correctly pushed into jobs queue');

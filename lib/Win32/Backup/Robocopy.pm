@@ -274,7 +274,32 @@ sub runjobs{
 		#use Data::Dump; dd $job;
 	}	
 }
-
+sub listjobs{
+	my $self = shift;
+	my %arg = @_;
+	$arg{format} //= 'compact';
+	$arg{fields} //= [qw( name src dst files history cron next_time next_time_descr
+							first_time_run archive archiveremove subfolders emptysubfolders
+							noprogress waitdrive verbose debug)];
+							
+	unless ( wantarray ){ return scalar @{$self->{jobs}} }
+	my @res;
+	my $count = 0;
+	my $long = 1 if $arg{format} eq 'long';
+	
+	foreach my $job ( @{$self->{jobs}} ){
+	
+		push @res,  ( $long ? "JOB $count:\n" : '').
+					join ' ',map{ 
+									($long ? "\t" : '').
+									"$_ = $job->{$_}".
+									($long ? "\n" : '')
+					
+					} @{$arg{fields}};
+	$count++;	
+	}
+	return @res;
+}
 ##################################################################
 # not public subs
 ##################################################################
