@@ -780,6 +780,51 @@ This is the method to cycle the job queue to see if something has to be run. If 
 is immediately updated with the correct time for the next execution.
 
 
+=head2 listjobs
+
+With C<listjobs> you can list all jobs currently present in the configuration. In scalar context it just returns the number of jobs
+while il list context it returns the list of jobs.
+
+In the list form you have the possibility to define the format used to represent the job with the C<format> parameter: if it is C<short>
+(and is the default value) each job will be represented on his own line. If by other hand  C<format => 'long'> a more fancy multiline
+string will be crafted for each job.
+
+You can also specify a list of fields you want to show instead to have them all present, passing an array reference as value of the
+C<fields> parameter.
+
+    # sclar context
+    my $jobcount = $bkp->listjobs;
+    print "there are $jobcont jobs configured";
+
+    # list context: all fields returned in compact mode
+    print "$_\n" for $bkp->listjobs;
+
+    # output:
+    name = job1 src = x:\path1 dst = F:\bkp\job1 files =  ...(all other fields and values following)
+    name = job2 src = y:\path2 dst = F:\bkp\job2 files =  ...
+
+    # list context: some field returned in compact mode
+    print "$_\n" for $bkp->listjobs(fields => [qw(name src next_time_descr)]);
+
+    # output:
+    name = job1 src = x:\path1 next_time_descr = Tue Jan  1 00:05:00 2019
+    name = job2 src = y:\path2 next_time_descr = Mon Apr  1 00:03:00 2019
+
+    # list context, long format just some field
+    print "$_\n" for $bkp->listjobs( format=>'long', fields => [qw(name src next_time_descr)]);
+
+    # output:
+    JOB 0:
+            name = job1
+            src = D:\ulisseDUE\Win32-Backup-Robocopy-job-mode
+            next_time_descr = Tue Jan  1 00:05:00 2019
+
+    JOB 1:
+            name = job2
+            src = D:\ulisseDUE\Win32-Backup-Robocopy-job-mode
+            next_time_descr = Mon Apr  1 00:03:00 2019
+
+
 =head1 CONFIGURATION FILE
 
 The configuration file holds JSON data into an array each element of the array being a job, contained in a hash.
@@ -819,7 +864,7 @@ Will produce the following configuration:
 
 you can freely add and modify by hand the configuration file, paying attention to the C<next_time> and C<next_time_descr> entries
 that are respectively seconds since epoch for the next scheduled run and the human readable form of the previous entry.
-Note that C<next_time_descr> is just a label and does not effect the effective running time.
+Note that C<next_time_descr> is just a label and does not affect the effective running time.
 
 =head1 EXAMPLES
 
