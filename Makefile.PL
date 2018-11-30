@@ -3,6 +3,8 @@ use strict;
 use warnings;
 use ExtUtils::MakeMaker;
 
+os_unsupported unless $^O eq 'MSWin32';
+
 WriteMakefile(
     NAME             => 'Win32::Backup::Robocopy',
     AUTHOR           => q{LorenzoTa <lorenzo@cpan.org>},
@@ -16,6 +18,13 @@ WriteMakefile(
     },
     BUILD_REQUIRES => {
         'Test::More' => '0',
+		'Carp'		=> '0',
+		'File::Spec'		=> '0',
+		'File::Path'		=> '0',
+		'JSON::PP'		=> '0',
+		'Capture::Tiny'		=> '0',
+		'DateTime::Tiny'		=> '0',
+		'Algorithm::Cron'		=> '0',
     },
     PREREQ_PM => {
         #'ABC'              => '1.6',
