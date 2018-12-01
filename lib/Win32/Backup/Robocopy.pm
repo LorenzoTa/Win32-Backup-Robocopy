@@ -227,12 +227,15 @@ sub runjobs{
 		return undef;
 	}
 	# accept a range instead of all jobs
-	my $range = shift;
+	my $range = "@_" // join '..',0,$#{ $self->{ jobs }};
 	
+	my @range = _validrange( $range );
 	
-	foreach my $job( @{ $self->{ jobs } } ){
-		if ( $job->{ debug } ){
-			###print "considering job [$job->{ name }]\n";		
+	#print "resulting range: @range\n"; return;
+	
+	foreach my $job( @{ $self->{ jobs } }[@range] ){
+		if ( $job->{ verbose } ){
+			print "considering job [$job->{ name }]\n";
 		}
 		# mosso in job
 		# if ( $job->{ first_time_run } ){
@@ -309,15 +312,25 @@ sub listjobs{
 ##################################################################
 sub _validrange {
 	my $range = shift;
+	$range =~ s/\s//g;
 	my @range;
 	# allowed only . , \d \s
-	croak "invalid range [$range] (allowed only [\s.,\d])!" if $range =~ /[^\s,.\d]/;
+	croak 'invalid range ['.$range.'] (allowed only [\s.,\d])!' if $range =~ /[^\s,.\d]/;
 	# not allowed a lone .
-	croak "invalid range [$range] (single .)!" if $range =~ /[^.]+\.{1}[^.]+/;
+	croak 'invalid range ['.$range.'] (single .)!' if $range =~ /[^.]+\.{1}[^.]+/;
 	# not allowed more than 2 .
-	croak "invalid range [$range] (more than 2 .)!" if $range =~ /[^.]+\.{3}/;
-	
-	
+	croak 'invalid range ['.$range.'] (more than 2 .)!' if $range =~ /[^.]+\.{3}/;
+	# $1 > $2 like in 25..7
+	 if ($range =~ /[^.]\.\.[^.]/){
+		foreach my $match ( $range=~/(\d+\.\.\d+)/g ){
+			$match=~/(\d+)\.\.(\d+)/;
+			croak "$1 > $2 in range [$range]" if $1 > $2;
+		}
+	}
+	@range = eval ($range);
+	my %single = map{ $_ => 1} @range;
+	@range = sort{ $a <=> $b } keys %single;
+	print "RANGE:@range\n";
 	return @range;
 }
 sub _waitdrive{

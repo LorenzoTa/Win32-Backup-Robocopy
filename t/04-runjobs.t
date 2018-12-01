@@ -20,6 +20,7 @@ foreach  my $dir ($tbasedir,$tsrc,$tdst){
 		unless (-d $dir){ make_path( $dir ) }
 		BAIL_OUT( "unable to create temporary folder: [$dir]!" ) unless -d $dir;
 }
+my $conf = File::Spec->catfile($tbasedir,'my_config.json');
 my $filename = 'Foscolo_A_Zacinto.txt';
 my $file1 = File::Spec->catfile($tsrc, $filename);
 open my $tfh1, '>', $file1 or BAIL_OUT ("unable to write $file1 in $tsrc!");
@@ -35,10 +36,10 @@ close $tfh1 or BAIL_OUT ("impossible to close $file1");
 #######################################################################
 
 # a bkp in a job mode
-my $bkp = Win32::Backup::Robocopy->new( config => File::Spec->catfile($tdst,'my_config.json') );
+my $bkp = Win32::Backup::Robocopy->new( config => $conf );
 
 # add a job  with first_time_run=>1
-$bkp->job(  name => 'test3', src => $tsrc, dst => $tdst, verbose => 1,
+$bkp->job(  name => 'test3', src => $tsrc, dst => $tdst,
 			cron => '0 0 25 12 *', first_time_run => 1);
 
 # this time it must return executing job [name]
