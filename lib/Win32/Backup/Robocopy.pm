@@ -226,6 +226,10 @@ sub runjobs{
 				"See the docs of ".__PACKAGE__." about different modes of instantiation\n";
 		return undef;
 	}
+	# accept a range instead of all jobs
+	my $range = shift;
+	
+	
 	foreach my $job( @{ $self->{ jobs } } ){
 		if ( $job->{ debug } ){
 			###print "considering job [$job->{ name }]\n";		
@@ -303,11 +307,24 @@ sub listjobs{
 ##################################################################
 # not public subs
 ##################################################################
+sub _validrange {
+	my $range = shift;
+	my @range;
+	# allowed only . , \d \s
+	croak "invalid range [$range] (allowed only [\s.,\d])!" if $range =~ /[^\s,.\d]/;
+	# not allowed a lone .
+	croak "invalid range [$range] (single .)!" if $range =~ /[^.]+\.{1}[^.]+/;
+	# not allowed more than 2 .
+	croak "invalid range [$range] (more than 2 .)!" if $range =~ /[^.]+\.{3}/;
+	
+	
+	return @range;
+}
 sub _waitdrive{
 	my $self = shift;
 	my $drive = shift;
 	print 	"\nBackup of:     $self->{src}\n".
-			"To:            $self->{dst}\n".
+			"To:              $self->{dst}\n".
 			"Waiting for drive $drive to be available..\n".
 			"(press ENTER when $drive is connected or CTRL-C to terminate the program)\n";
 	my $input = <STDIN>;
