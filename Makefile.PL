@@ -14,9 +14,12 @@ WriteMakefile(
     PL_FILES         => {},
     MIN_PERL_VERSION => '5.006',
     CONFIGURE_REQUIRES => {
-        'ExtUtils::MakeMaker' => '0',
+         'ExtUtils::MakeMaker' => 7.26
     },
     BUILD_REQUIRES => {
+        
+    },
+    PREREQ_PM => {
         'Test::More' => '0',
 		'Carp'		=> '0',
 		'File::Spec'		=> '0',
@@ -25,10 +28,6 @@ WriteMakefile(
 		'Capture::Tiny'		=> '0',
 		'DateTime::Tiny'		=> '0',
 		'Algorithm::Cron'		=> '0',
-    },
-    PREREQ_PM => {
-        #'ABC'              => '1.6',
-        #'Foo::Bar::Module' => '5.0401',
     },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES => 'Win32-Backup-Robocopy-*' },

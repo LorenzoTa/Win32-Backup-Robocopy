@@ -51,7 +51,7 @@ like( $stdout, qr/^executing job \[test3\]/, "right output of first_time_run (ex
 like( $stdout, qr/^is not time to execute/, "right output of first_time_run (skipping..)");
 
 undef $bkp;
-$bkp = Win32::Backup::Robocopy->new( config => 'my_config.json' );
+$bkp = Win32::Backup::Robocopy->new( File::Spec->catfile($tbasedir,'my_config.json' );
 # same source different dest and second with history
 $bkp->job(	name=>'test3',src=>$tsrc,
 			dst=>$tdst,cron=>'0 0 25 1 *',
