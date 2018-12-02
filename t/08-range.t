@@ -16,8 +16,6 @@ foreach my $no ( 'x','3x','3-4', '1..3,4.4', '1..3,4...6','1.3','1...3'){
 # invalid ranges - $1 > $2
 foreach my $no2 ('3..1,7..9','1..4,7..5','3..4, 7..5','0..2,27..5'){
 	dies_ok { Win32::Backup::Robocopy::_validrange($no2) } "invalid reverse range [$no2]";
-	#print "range $no2:\t"; 
-	#Win32::Backup::Robocopy::_validrange($no2);
 }
 
 # valid ranges
@@ -26,11 +24,12 @@ foreach my $ok ('1..3','1,3..5','1,3..5,7'){
 }
 
 # valid ranges array
+# NO! _validrange ONLY ACCEPTS STRING! runjobs transform an
+# eventual array into a string
 # ok(Win32::Backup::Robocopy::_validrange(1..3),"valid range array (1..3)");
 # ok(Win32::Backup::Robocopy::_validrange(1,2..4,9),"valid range array (1,2..4,9)");
 # ok(Win32::Backup::Robocopy::_validrange(9,0..3),"valid range array (9,0..3)");
 
-# Win32::Backup::Robocopy::_validrange(1,2..4,9);
 my %test = (
 	'1,1..3'	=> [(1,2,3)],
 	'1,2..5,4'	=> [(1,2,3,4,5)],

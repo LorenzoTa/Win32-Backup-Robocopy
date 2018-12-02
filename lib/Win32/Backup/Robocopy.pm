@@ -227,12 +227,13 @@ sub runjobs{
 		return undef;
 	}
 	# accept a range instead of all jobs
-	my $range = "@_" // join '..',0,$#{ $self->{ jobs }};
-	
+#print "IN RUNJOBS \@_ is [@_]\n";	
+	my $range = ( @_ ? (join ',',@_) : undef) // join '..',0,$#{ $self->{ jobs }};
+#print "IN RUNJOBS range is [$range]\n";	
 	my @range = _validrange( $range );
 	
-	#print "resulting range: @range\n"; return;
-	
+#print "resulting range: @range\n"; return;
+#return;	
 	foreach my $job( @{ $self->{ jobs } }[@range] ){
 		if ( $job->{ verbose } ){
 			print "considering job [$job->{ name }]\n";
@@ -330,7 +331,7 @@ sub _validrange {
 	@range = eval ($range);
 	my %single = map{ $_ => 1} @range;
 	@range = sort{ $a <=> $b } keys %single;
-	print "RANGE:@range\n";
+	#print "RANGE:@range\n";
 	return @range;
 }
 sub _waitdrive{
