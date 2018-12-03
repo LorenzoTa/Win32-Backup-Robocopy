@@ -33,7 +33,7 @@ note('testing RUN mode instantiation');
 
 # module has sane defaults while in RUN mode
 my $bkp = Win32::Backup::Robocopy->new( name => 'test', src	=> '.', );
-ok ($bkp->{dst} eq File::Spec->catdir(File::Spec->rel2abs( '.' ),$bkp->{name}),'default destination');
+ok ($bkp->{dst} eq File::Spec->rel2abs( '.' ),'default destination');
 
 # in the RUN mode no job entry is present
 ok (! exists $bkp->{jobs}, 'no jobs entry exists in main object while in RUN mode');
