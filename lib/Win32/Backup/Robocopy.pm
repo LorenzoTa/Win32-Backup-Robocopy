@@ -19,6 +19,7 @@ our $VERSION = 3;
 # prove -I ./lib -v
 # aka
 # prove -l -v
+#
 
 # perl -I ./lib -MWin32::Backup::Robocopy -e "$bkp=Win32::Backup::Robocopy->new(name=>'test',src=>'.',dst=>'H:/test',waitdrive=>1); $bkp->run()"
 
@@ -29,6 +30,10 @@ our $VERSION = 3;
 # 376
 
 # perl -I ./lib -MWin32::Backup::Robocopy -MData::Dump -e "$bkp=Win32::Backup::Robocopy->new(conf=>'bkpconfig.json'); $bkp->job(src=>'.',dst=>'x:/dest',name=>'first',cron=>'* 4 * * *'); $bkp->runjobs"
+
+# perl -MModule::CPANTS::Analyse -MData::Dump -e "$an = Module::CPANTS::Analyse->new({dist=>$ARGV[0]}); $an->run; dd $an->d"
+
+# cpants_lint.pl Foo-Bar-1.23.tar.gz
 
 sub new {
 	my $class = shift;
@@ -170,7 +175,6 @@ sub job {
 	#use deafults as for run method if not specified otherwise
 	my %opt = _verify_args(@_);
 	%opt = _default_new_params( %opt );	
-	#my %opt = _default_new_params( @_ );	
 	%opt = _default_run_params( %opt );
 	# intialize first_time_run to 0
 	$opt{ first_time_run } //= 0;
@@ -318,9 +322,9 @@ sub _validrange {
 	# allowed only . , \d \s
 	croak 'invalid range ['.$range.'] (allowed only [\s.,\d])!' if $range =~ /[^\s,.\d]/;
 	# not allowed a lone .
-	croak 'invalid range ['.$range.'] (single .)!' if $range =~ /[^.]+\.{1}[^.]+/;
+	croak 'invalid range ['.$range.'] (single .)!' if $range =~ /(?<!\.)\.(?!\.)/;
 	# not allowed more than 2 .
-	croak 'invalid range ['.$range.'] (more than 2 .)!' if $range =~ /[^.]+\.{3}/;
+	croak 'invalid range ['.$range.'] (more than 2 .)!' if $range =~ /\.{3}/;
 	# $1 > $2 like in 25..7
 	 if ($range =~ /[^.]\.\.[^.]/){
 		foreach my $match ( $range=~/(\d+\.\.\d+)/g ){
