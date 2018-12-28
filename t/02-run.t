@@ -121,14 +121,17 @@ close $tfh1 or BAIL_OUT ("impossible to close $file1");
 ok ( $exit == 1, "updated file $filename correctly backed up in a new folder while history = 1" );
 
 # get the position of last HISTORY backup
-opendir my $lastdir, $bkp->{dst} or BAIL_OUT ("Unble to read rirectory [$bkp->{dst}]!");
+my $completedest = File::Spec->catdir($bkp->{dst},$bkp->{name});
+opendir my $lastdir, 
+			$completedest,
+			or BAIL_OUT ("Unable to read directory [$completedest]!");
 my @ordered_dirs = sort grep {!/^\./} readdir($lastdir);
-my $lastfilepath = File::Spec->catfile( $bkp->{dst}, $ordered_dirs[-1], $filename);
+my $lastfilepath = File::Spec->catfile( $completedest, $ordered_dirs[-1], $filename);
 
 # check the READONLY attributes was set in destination because of extraparam => '/A+:R'
 my $lastattr;
 my $lastgetattrexit = GetAttributes( $lastfilepath, $lastattr );
-BAIL_OUT( "impossible to retrieve attributes of $lastfilepath" ) unless $lastgetattrexit;
+BAIL_OUT( "impossible to retrieve attributes of $lastfilepath".__LINE__ ) unless $lastgetattrexit;
 my $lastreadonlyset = $lastattr & READONLY;
 cmp_ok( $lastreadonlyset, '==', 1, "READONLY bit is present in $lastfilepath");
 

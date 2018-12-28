@@ -10,7 +10,7 @@ use JSON::PP; # only this support sort_by(custom_func)
 use Capture::Tiny qw(capture);
 use DateTime::Tiny;
 use Algorithm::Cron;
-our $VERSION = 3;
+our $VERSION = 4;
 
 # perl -I ./lib ./t/01-new.t & perl -I ./lib ./t/02-run.t &  perl -I ./lib ./t/03-job.t & perl -I ./lib ./t/04-runjobs.t & perl -I ./lib  ./t/05-writeconf.t
 # AKA
@@ -82,7 +82,13 @@ sub run	{
 	}
 	# we are in RUN mode: continue..
 	my $src = $self->{src};
-	my $dst = $self->{dst};
+	#my $dst = $self->{dst};
+	#
+	my $dst = File::Spec->file_name_is_absolute( $self->{dst} ) ?
+				$self->{dst}									:
+				File::Spec->rel2abs( $self->{dst} ) ;
+	$dst = File::Spec->catdir( $dst, $self->{name} );
+	#
 	# modify destination if history = 1
 	my $date_folder;
 	if ( $self->{history} ){
@@ -484,7 +490,7 @@ sub _verify_args{
 	$arg{src} //= $arg{source};
 	croak "backup need a source!" unless $arg{src};
 	$arg{dst} //= $arg{destination} // '.';
-	$arg{dst} = File::Spec->catdir( $arg{dst}, $arg{name} );
+	############$arg{dst} = File::Spec->catdir( $arg{dst}, $arg{name} );
 	map { $_ =  File::Spec->file_name_is_absolute( $_ ) ?
 				$_ 										:
 				File::Spec->rel2abs( $_ ) ;
