@@ -850,7 +850,7 @@ With C<listjobs> you can list all jobs currently present in the configuration. I
 while il list context it returns the list of jobs.
 
 In the list form you have the possibility to define the format used to represent the job with the C<format> parameter: if it is C<short>
-(and is the default value) each job will be represented on his own line. If by other hand  C<format => 'long'> a more fancy multiline
+(and is the default value) each job will be represented on his own line. If by other hand  C<format =E<gt> 'long'> a more fancy multiline
 string will be crafted for each job.
 
 You can also specify a list of fields you want to show instead to have them all present, passing an array reference as value of the
