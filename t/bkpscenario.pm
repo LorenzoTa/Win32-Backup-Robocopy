@@ -53,6 +53,7 @@ sub update_file{
 }
 
 sub clean_all{
-
+	my $dir = shift;
+	remove_tree $dir or croak "impossible to remove directory [$dir]!";
 }
 1;

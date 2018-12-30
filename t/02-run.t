@@ -4,7 +4,6 @@ use strict;
 use warnings;
 use Test::More;
 use Test::Exception;
-use File::Path qw( make_path remove_tree );
 use Win32::File qw(:DEFAULT GetAttributes SetAttributes);
 use Win32::Backup::Robocopy;
 use lib '.';
@@ -33,7 +32,7 @@ dies_ok { $nobkp->run } 'run is expected to die with invalid folder name';
 #######################################################################
 my ($tbasedir,$tsrc,$tdst) = bkpscenario::create_dirs();
 BAIL_OUT( "unable to create temporary folders!" ) unless $tbasedir;
-note("creating a bakup scenario in $tbasedir");
+note("created a bakup scenario in $tbasedir");
 
 my $file1 = 'Foscolo_A_Zacinto.txt';
 my $tfh1 = bkpscenario::open_file($tsrc,$file1);
@@ -126,4 +125,4 @@ ok( $last_line eq "  il fato illacrimata sepoltura.\n","file $file1 has the expe
 
 # remove the backup scenario
 note("removing bakup scenario in $tbasedir");
-remove_tree($tbasedir);
+bkpscenario::clean_all($tbasedir);

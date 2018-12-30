@@ -495,7 +495,7 @@ sub _verify_args{
 				$_ 										:
 				File::Spec->rel2abs( $_ ) ;
 	} $arg{src}, $arg{dst};
-	carp "backup source [$arg{src}] does not exists!\n".
+	carp "backup source [$arg{src}] does not exists!".
 			"(this is only a warning)" unless -d $arg{src};
 	return %arg;	
 }

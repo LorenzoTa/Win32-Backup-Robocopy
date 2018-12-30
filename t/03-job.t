@@ -5,11 +5,13 @@ use warnings;
 use Test::More qw(no_plan);
 use Test::Exception;
 use Win32::Backup::Robocopy;
-use File::Path qw( make_path remove_tree );
 
-my $tbasedir = File::Spec->catdir(File::Spec->tmpdir(),'test_backup');
-note("creating a backup scenario  in $tbasedir");
-make_path( $tbasedir );
+use lib '.';
+use t::bkpscenario;
+
+my ($tbasedir,$tsrc,$tdst) = bkpscenario::create_dirs();
+BAIL_OUT( "unable to create temporary folders!" ) unless $tbasedir;
+note("created a bakup scenario in $tbasedir");
 
 # new in JOB mode just needs conf croaks if destination drive does not exists
 my $bkp = Win32::Backup::Robocopy->new( conf => File::Spec->catfile($tbasedir,'my_config.json') );
@@ -56,7 +58,7 @@ foreach my $field (qw( 	name src dst files history archive
 }
 
 # a second job with different arguments
-$bkp->job( name=>'test2', src=>'./a_folder',
+$bkp->job( name=>'test2', src=>$tsrc,
 			cron=>'0 0 25 12 *', history=>1,
 			first_time_run=>1);
 
@@ -64,7 +66,7 @@ $bkp->job( name=>'test2', src=>'./a_folder',
 ok(@{$bkp->{jobs}} == 2, 'second job correctly pushed into jobs queue');
 
 # next_time and next_time_descr ignored if passed
-$bkp->job ( name=>'test3', src=>'./a_folder_but_another',debug=>1,
+$bkp->job ( name=>'test3', src=>$tsrc, debug=>1,
 			cron=>'0 0 21 09 *', history=>1, first_time_run=>1,
 			#invalid params!!
 			next_time => 42,
@@ -76,4 +78,4 @@ ok(${$bkp->{jobs}}[2]->{next_time_descr} eq '--AS SOON AS POSSIBLE--', 'next_tim
 
 # remove the backup scenario
 note("removing bakup scenario in $tbasedir");
-remove_tree($tbasedir);
+bkpscenario::clean_all($tbasedir);
