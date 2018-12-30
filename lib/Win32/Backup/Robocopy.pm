@@ -10,7 +10,7 @@ use JSON::PP; # only this support sort_by(custom_func)
 use Capture::Tiny qw(capture);
 use DateTime::Tiny;
 use Algorithm::Cron;
-our $VERSION = 4;
+our $VERSION = 5;
 
 # perl -I ./lib ./t/01-new.t & perl -I ./lib ./t/02-run.t &  perl -I ./lib ./t/03-job.t & perl -I ./lib ./t/04-runjobs.t & perl -I ./lib  ./t/05-writeconf.t
 # AKA
@@ -82,13 +82,10 @@ sub run	{
 	}
 	# we are in RUN mode: continue..
 	my $src = $self->{src};
-	#my $dst = $self->{dst};
-	#
 	my $dst = File::Spec->file_name_is_absolute( $self->{dst} ) ?
 				$self->{dst}									:
 				File::Spec->rel2abs( $self->{dst} ) ;
 	$dst = File::Spec->catdir( $dst, $self->{name} );
-	#
 	# modify destination if history = 1
 	my $date_folder;
 	if ( $self->{history} ){
@@ -135,13 +132,11 @@ sub run	{
 						# extra parameters for robocopy
 						@extra
 						;
-	###########################################	print "Executing:\nROBOCOPY @cmdargs\n";
 	my ($stdout, $stderr, $exit) = capture {
 	  system( 'ROBOCOPY', @cmdargs );
 	};
 	# !!
 	$exit = $exit>>8;
-	# print "OUT:\n$stdout\nERR:\n$stderr\nEXIT:\n$exit\n";
 	my %exit_code = (
 		0   =>  'No errors occurred, and no copying was done.'.
 				'The source and destination directory trees are completely synchronized.',
@@ -159,14 +154,12 @@ sub run	{
 	);
 	my $exitstr = '';
 	foreach my $code(sort {$a<=>$b} keys %exit_code){
-		#print $code.' '.($exit & $code)."\n";
 		if ( $exit == 0){
 			$exitstr .= $exit_code{0};
 			last;
 		}
 		$exitstr .= $exit_code{$code} if ($exit & $code);
 	}
-	#print "EXITSTRING:\n$exitstr\n";
 	return $stdout, $stderr, $exit, $exitstr, $date_folder;
 }
 
@@ -178,7 +171,7 @@ sub job {
 				"See the docs of ".__PACKAGE__." about different modes of instantiation\n";
 		return undef;
 	}
-	#use deafults as for run method if not specified otherwise
+	# use deafults as for run method if not specified otherwise
 	my %opt = _verify_args(@_);
 	%opt = _default_new_params( %opt );	
 	%opt = _default_run_params( %opt );
@@ -218,10 +211,6 @@ sub job {
 	my $json = JSON::PP->new->utf8->pretty->canonical;
 	$json->canonical(1);
 	$json->sort_by( \&_ordered_json );
-	#if ( $opt{ debug } ){
-		#print "returned JSON:\n",$json->encode( $jobconf ),"\n";
-	#}
-	# push the job in the queue
 	push @{ $self->{jobs} }, $jobconf;
 	# clean the main object of other (now unwanted) properties
 	$self->_write_conf;
@@ -237,23 +226,12 @@ sub runjobs{
 		return undef;
 	}
 	# accept a range instead of all jobs
-#print "IN RUNJOBS \@_ is [@_]\n";	
 	my $range = ( @_ ? (join ',',@_) : undef) // join '..',0,$#{ $self->{ jobs }};
-#print "IN RUNJOBS range is [$range]\n";	
 	my @range = _validrange( $range );
-	
-#print "resulting range: @range\n"; return;
-#return;	
 	foreach my $job( @{ $self->{ jobs } }[@range] ){
 		if ( $job->{ verbose } ){
 			print "considering job [$job->{ name }]\n";
 		}
-		# mosso in job
-		# if ( $job->{ first_time_run } ){
-					# $job->{ next_time } = 0;
-					# $job->{ first_time_run } = 0;
-		# }
-		# time limit exceeded: run the job
 		if ( time > $job->{ next_time } ){
 			print "executing job [$job->{ name }]\n";
 			# create a bkp object using values from the job
@@ -268,7 +246,7 @@ sub runjobs{
 				verbose 	=> $job->{verbose} // 0,
 				debug		=> $job->{debug} // 0,
 				#writelog	=> $job->{writelog} // 1,
-			},ref $self;#__PACKAGE__;		
+			},ref $self;		
 			
 			$bkp->run( 
 				archive => $job->{archive},
@@ -289,7 +267,6 @@ sub runjobs{
 		else {
 			print "is not time to execute [$job->{ name }] (next time will be $job->{ next_time_descr })\n";
 		}
-		#use Data::Dump; dd $job;
 	}	
 }
 sub listjobs{
@@ -390,12 +367,8 @@ sub _load_conf{
 		carp "unexpected elements in job $count  retrieved from $file" if keys %$job > @check;
 		$count++;
 	}
-	
 	#print scalar @{$data}," jobs retrieved from file\n";
 	return $data;
-
-#[{'not yet implemented'=>'from _load_conf'}] 
-
 }
 
 sub _write_conf{
