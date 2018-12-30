@@ -6,8 +6,10 @@ use Test::More;
 use Test::Exception;
 use Win32::File qw(:DEFAULT GetAttributes SetAttributes);
 use Win32::Backup::Robocopy;
+
 use lib '.';
 use t::bkpscenario;
+
 plan tests => 12;
 
 # run croaks if destination drive does not exists
