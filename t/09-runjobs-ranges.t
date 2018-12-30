@@ -4,39 +4,27 @@ use strict;
 use warnings;
 use Test::More qw(no_plan);
 use Test::Exception;
-use File::Path qw( make_path remove_tree );
 use Capture::Tiny qw(capture);
 use Win32::Backup::Robocopy;
 
+use lib '.';
+use t::bkpscenario;
 
 #######################################################################
 # a real minimal bkp scenario
 #######################################################################
-my $tbasedir = File::Spec->catdir(File::Spec->tmpdir(),'test_backup');
-note("creating a bakup scenario in $tbasedir");
-my $tsrc = File::Spec->catdir( $tbasedir,'src');
-my $tdst = File::Spec->catdir( $tbasedir,'dst');
-foreach  my $dir ($tbasedir,$tsrc,$tdst){
-		unless (-d $dir){ make_path( $dir ) }
-		BAIL_OUT( "unable to create temporary folder: [$dir]!" ) unless -d $dir;
-}
-my $conf = File::Spec->catfile($tbasedir, 'my_config.json');
-my $filename = 'Foscolo_A_Zacinto.txt';
-my $file1 = File::Spec->catfile($tsrc, $filename);
-open my $tfh1, '>', $file1 or BAIL_OUT ("unable to write $file1 in $tsrc!");
-print $tfh1 "\t\tA ZACINTO\n\n",
-			"Né più mai toccherò le sacre sponde\n",
-			"  ove il mio corpo fanciulletto giacque,\n",
-			"  Zacinto mia, che te specchi nell'onde\n",
-			"  del greco mar da cui vergine nacque\n";
-			
-close $tfh1 or BAIL_OUT ("impossible to close $file1");
-#######################################################################
-# end of minimal bkp scenario 
-#######################################################################
+my ($tbasedir,$tsrc,$tdst) = bkpscenario::create_dirs();
+BAIL_OUT( "unable to create temporary folders!" ) unless $tbasedir;
+note("created bakup scenario in $tbasedir");
+
+my $file1 = 'Foscolo_A_Zacinto.txt';
+my $tfh1 = bkpscenario::open_file($tsrc,$file1);
+BAIL_OUT( "unable to create temporary file!" ) unless $tfh1;
+
+bkpscenario::update_file($tfh1,0);		
 
 # a bkp in a job mode
-my $bkp = Win32::Backup::Robocopy->new( config => $conf );
+my $bkp = Win32::Backup::Robocopy->new( config => File::Spec->catfile($tbasedir,'my_config.json' ) );
 
 # add a serie of job identical
 $bkp->job(  name => 'test0', src => $tsrc, dst => $tdst, verbose => 1,
@@ -103,8 +91,7 @@ ok($lines[5] =~ /^is not time to execute \[test5\]/,'not time for [test5]');
 # $bkp->runjobs(4..0);
 # dies_ok {  $bkp->runjobs(4..0) } "invalid reverse range [4..0]";
 
-
 # remove the backup scenario
-note("removing bakup scenario in $tbasedir");
-remove_tree($tbasedir);
+bkpscenario::clean_all($tbasedir);
+note("removed bakup scenario in $tbasedir");
 
