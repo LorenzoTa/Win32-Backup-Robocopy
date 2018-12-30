@@ -4,22 +4,19 @@ use strict;
 use warnings;
 use Test::More qw(no_plan);
 use Test::Exception;
-use File::Path qw( make_path remove_tree );
 use Capture::Tiny qw(capture);
 use Win32::Backup::Robocopy;
+
+use lib '.';
+use t::bkpscenario;
+
 
 #######################################################################
 # a real minimal bkp scenario
 #######################################################################
-my $tbasedir = File::Spec->catdir(File::Spec->tmpdir(),'test_backup');
-note("creating a bakup scenario in $tbasedir");
-my $tsrc = File::Spec->catdir( $tbasedir,'src');
-my $tdst = File::Spec->catdir( $tbasedir,'dst');
-foreach  my $dir ($tbasedir,$tsrc,$tdst){
-		remove_tree( $dir ) if -d $dir;
-		make_path( $dir );
-		BAIL_OUT( "unable to create temporary folder: [$dir]!" ) unless -d $dir;
-}
+my ($tbasedir,$tsrc,$tdst) = bkpscenario::create_dirs();
+BAIL_OUT( "unable to create temporary folders!" ) unless $tbasedir;
+note("created bakup scenario in $tbasedir");
 
 # configuration in temp dir
 my $conf = File::Spec->catfile($tbasedir,'my_config.json');
@@ -82,5 +79,5 @@ dies_ok { $bkp = Win32::Backup::Robocopy->new( config => $conf.'b' )}
 		"expecting to die with an invalid configuration (malformed JSON string)";
 
 # remove the backup scenario
-note("removing bakup scenario in $tbasedir");
-remove_tree($tbasedir) or BAIL_OUT "impossible to remove directory $tbasedir";
+bkpscenario::clean_all($tbasedir);
+note("removed bakup scenario in $tbasedir");
