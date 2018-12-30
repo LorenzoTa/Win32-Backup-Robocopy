@@ -8,32 +8,22 @@ use File::Path qw( make_path remove_tree );
 use Capture::Tiny qw(capture);
 use Win32::Backup::Robocopy;
 
-
+use lib '.';
+use t::bkpscenario;
 #######################################################################
 # a real minimal bkp scenario
 #######################################################################
-my $tbasedir = File::Spec->catdir(File::Spec->tmpdir(),'test_backup');
-note("creating a bakup scenario in $tbasedir");
-my $tsrc = File::Spec->catdir( $tbasedir,'src');
-my $tdst = File::Spec->catdir( $tbasedir,'dst');
-foreach  my $dir ($tbasedir,$tsrc,$tdst){
-		unless (-d $dir){ make_path( $dir ) }
-		BAIL_OUT( "unable to create temporary folder: [$dir]!" ) unless -d $dir;
-}
+my ($tbasedir,$tsrc,$tdst) = bkpscenario::create_dirs();
+BAIL_OUT( "unable to create temporary folders!" ) unless $tbasedir;
+note("created bakup scenario in $tbasedir");
+
+my $file1 = 'Foscolo_A_Zacinto.txt';
+my $tfh1 = bkpscenario::open_file($tsrc,$file1);
+BAIL_OUT( "unable to create temporary file!" ) unless $tfh1;
+
+bkpscenario::update_file($tfh1,0);			
+
 my $conf = File::Spec->catfile($tbasedir,'my_config.json');
-my $filename = 'Foscolo_A_Zacinto.txt';
-my $file1 = File::Spec->catfile($tsrc, $filename);
-open my $tfh1, '>', $file1 or BAIL_OUT ("unable to write $file1 in $tsrc!");
-print $tfh1 "\t\tA ZACINTO\n\n",
-			"Né più mai toccherò le sacre sponde\n",
-			"  ove il mio corpo fanciulletto giacque,\n",
-			"  Zacinto mia, che te specchi nell'onde\n",
-			"  del greco mar da cui vergine nacque\n";
-			
-close $tfh1 or BAIL_OUT ("impossible to close $file1");
-#######################################################################
-# end of minimal bkp scenario 
-#######################################################################
 
 # a bkp in a job mode
 my $bkp = Win32::Backup::Robocopy->new( config => $conf );
@@ -64,15 +54,15 @@ $bkp->job(	name=>'test4',src=>$tsrc,
 ($stdout, $stderr, @result) = capture { $bkp->runjobs() };
 
 # inside test3 must be a file
-ok(-e File::Spec->catfile($tdst,'test3','Foscolo_A_Zacinto.txt'),'file exists in  directory test3');
+ok(-e File::Spec->catfile($tdst,'test3',$file1),'file exists in  directory test3');
 
 # get the position of last HISTORY backup
 opendir my $lastdir, File::Spec->catdir($tdst,'test4') or BAIL_OUT ("Unble to read directory test4!");
 my @ordered_dirs = sort grep {!/^\./} readdir($lastdir);
-my $lastfilepath = File::Spec->catfile( $bkp->{dst}, $ordered_dirs[-1], $filename);
+my $lastfilepath = File::Spec->catfile( $bkp->{dst}, $ordered_dirs[-1], $file1);
 
-ok( ! -e File::Spec->catfile($tdst,'test4','Foscolo_A_Zacinto.txt'),'file does not exists in  directory test4');
+ok( ! -e File::Spec->catfile($tdst,'test4',$file1),'file does not exists in  directory test4');
 
 # remove the backup scenario
-note("removing bakup scenario in $tbasedir");
-remove_tree($tbasedir);
+bkpscenario::clean_all($tbasedir);
+note("removed bakup scenario in $tbasedir");

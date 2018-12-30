@@ -32,7 +32,7 @@ dies_ok { $nobkp->run } 'run is expected to die with invalid folder name';
 #######################################################################
 my ($tbasedir,$tsrc,$tdst) = bkpscenario::create_dirs();
 BAIL_OUT( "unable to create temporary folders!" ) unless $tbasedir;
-note("created a bakup scenario in $tbasedir");
+note("created bakup scenario in $tbasedir");
 
 my $file1 = 'Foscolo_A_Zacinto.txt';
 my $tfh1 = bkpscenario::open_file($tsrc,$file1);
@@ -124,5 +124,5 @@ close $lastfile or BAIL_OUT("unable to close file!");
 ok( $last_line eq "  il fato illacrimata sepoltura.\n","file $file1 has the expected content in folder $ordered_dirs[-1]");
 
 # remove the backup scenario
-note("removing bakup scenario in $tbasedir");
 bkpscenario::clean_all($tbasedir);
+note("removed bakup scenario in $tbasedir");
