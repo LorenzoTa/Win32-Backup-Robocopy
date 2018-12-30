@@ -70,6 +70,7 @@ sub new {
 				#writelog	=> $arg {writelog} // 1,
 	}, $class;
 }
+
 sub run	{
 	my $self = shift;
 	my %opt = _default_run_params(@_);
@@ -133,33 +134,11 @@ sub run	{
 						@extra
 						;
 	my ($stdout, $stderr, $exit) = capture {
-	  system( 'ROBOCOPY', @cmdargs );
+	system( 'ROBOCOPY', @cmdargs );
 	};
 	# !!
 	$exit = $exit>>8;
-	my %exit_code = (
-		0   =>  'No errors occurred, and no copying was done.'.
-				'The source and destination directory trees are completely synchronized.',
-		1   =>  'One or more files were copied successfully (that is, new files have arrived).',
-		2   =>  'Some Extra files or directories were detected. No files were copied'.
-				'Examine the output log for details.',
-		4   =>  'Some Mismatched files or directories were detected.'.
-				'Examine the output log. Housekeeping might be required.',
-		8   =>  'Some files or directories could not be copied'.
-				'(copy errors occurred and the retry limit was exceeded).'.
-				'Check these errors further.',
-		16  =>  'Serious error. Robocopy did not copy any files.'.
-				'Either a usage error or an error due to insufficient access privileges'.
-				'on the source or destination directories.'
-	);
-	my $exitstr = '';
-	foreach my $code(sort {$a<=>$b} keys %exit_code){
-		if ( $exit == 0){
-			$exitstr .= $exit_code{0};
-			last;
-		}
-		$exitstr .= $exit_code{$code} if ($exit & $code);
-	}
+	my $exitstr = _robocopy_exitstring($exit);
 	return $stdout, $stderr, $exit, $exitstr, $date_folder;
 }
 
@@ -171,7 +150,7 @@ sub job {
 				"See the docs of ".__PACKAGE__." about different modes of instantiation\n";
 		return undef;
 	}
-	# use deafults as for run method if not specified otherwise
+	# use defaults as for run method if not specified otherwise
 	my %opt = _verify_args(@_);
 	%opt = _default_new_params( %opt );	
 	%opt = _default_run_params( %opt );
@@ -269,6 +248,7 @@ sub runjobs{
 		}
 	}	
 }
+
 sub listjobs{
 	my $self = shift;
 	my %arg = @_;
@@ -295,9 +275,76 @@ sub listjobs{
 	}
 	return @res;
 }
+
+sub restore{
+	my $self = shift;
+	my %arg = @_;
+	for ( 'from', 'to' ){
+		croak "restore need a $_ param!" unless $arg{$_};
+	}
+	map { $_ =  File::Spec->file_name_is_absolute( $_ ) ?
+				$_ 										:
+				File::Spec->rel2abs( $_ ) ;
+	} $arg{from}, $arg{to};
+	# check source directory
+	croak "'from' parameter points to a non existing directory!" unless -d $arg{from};
+	# check and create destination directory
+	make_path( $arg{to} ) unless -d $arg{to};	
+	# check if it is a restore from a history backup
+	opendir my $dirh, $arg{from} or croak "unable to open dir [$arg{from}] to read";
+	my $is_history = 1;
+	while (my $it = readdir($dirh) ){
+		next if $it =~/^\.\.?$/;
+		# if file or not matching timestamp used for folder is not history backup
+		if ( -f $it or $it !~/\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}/){
+			$is_history = 0;
+			last;
+		}
+	}
+	if ( $is_history ){
+	
+	}
+	else{
+		my ($stdout, $stderr, $exit) = capture {
+		system( 'ROBOCOPY', $arg{from}, $arg{to}, '*.*', '/E', '/DCOPY:T', '/SEC' );
+		};
+		# !!
+		$exit = $exit>>8;
+		my $exitstr = _robocopy_exitstring($exit);
+		return ($stdout, $stderr, $exit, $exitstr);
+	}
+}
 ##################################################################
 # not public subs
 ##################################################################
+sub _robocopy_exitstring{
+	my $exit = shift;
+	#$exit = $exit>>8;
+	my %exit_code = (
+		0   =>  'No errors occurred, and no copying was done. '.
+				'The source and destination directory trees are completely synchronized.',
+		1   =>  'One or more files were copied successfully (that is, new files have arrived).',
+		2   =>  'Some Extra files or directories were detected. No files were copied. '.
+				'Examine the output log for details.',
+		4   =>  'Some Mismatched files or directories were detected. '.
+				'Examine the output log. Housekeeping might be required.',
+		8   =>  'Some files or directories could not be copied '.
+				'(copy errors occurred and the retry limit was exceeded). '.
+				'Check these errors further.',
+		16  =>  'Serious error. Robocopy did not copy any files. '.
+				'Either a usage error or an error due to insufficient access privileges '.
+				'on the source or destination directories.'
+	);
+	my $exitstr = '';
+	foreach my $code(sort {$a<=>$b} keys %exit_code){
+		if ( $exit == 0){
+			$exitstr .= $exit_code{0};
+			last;
+		}
+		$exitstr .= ' '.$exit_code{$code} if ($exit & $code);
+	}
+	return $exitstr;	
+}
 sub _validrange {
 	my $range = shift;
 	$range =~ s/\s//g;
@@ -458,7 +505,6 @@ sub _verify_args{
 	$arg{src} //= $arg{source};
 	croak "backup need a source!" unless $arg{src};
 	$arg{dst} //= $arg{destination} // '.';
-	############$arg{dst} = File::Spec->catdir( $arg{dst}, $arg{name} );
 	map { $_ =  File::Spec->file_name_is_absolute( $_ ) ?
 				$_ 										:
 				File::Spec->rel2abs( $_ ) ;
