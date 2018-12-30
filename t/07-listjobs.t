@@ -4,12 +4,16 @@ use strict;
 use warnings;
 use Test::More qw(no_plan);
 use Win32::Backup::Robocopy;
-use File::Path qw( make_path remove_tree );
 
-my $tbasedir = File::Spec->catdir(File::Spec->tmpdir(),'test_backup');
-note("creating a backup scenario  in $tbasedir");
-make_path( $tbasedir );
+use lib '.';
+use t::bkpscenario;
 
+#######################################################################
+# a real minimal bkp scenario
+#######################################################################
+my ($tbasedir,$tsrc,$tdst) = bkpscenario::create_dirs();
+BAIL_OUT( "unable to create temporary folders!" ) unless $tbasedir;
+note("created bakup scenario in $tbasedir");
 
 my $bkp = Win32::Backup::Robocopy->new( conf =>  File::Spec->catfile($tbasedir,'test_backup') );
 
@@ -28,5 +32,5 @@ foreach my $ele ( @arr ){
 }
 
 # remove the backup scenario
-note("removing bakup scenario in $tbasedir");
-remove_tree($tbasedir);
+bkpscenario::clean_all($tbasedir);
+note("removed bakup scenario in $tbasedir");
