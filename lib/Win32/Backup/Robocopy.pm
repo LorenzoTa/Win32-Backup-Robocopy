@@ -330,9 +330,7 @@ sub _waitdrive{
 			"(press ENTER when $drive is connected or CTRL-C to terminate the program)\n";
 	my $input = <STDIN>;
 	$self->run();
-
 }
-
 sub _load_conf{ 
 	my $file = shift;
 	return [] unless -e -r -f $file;
@@ -367,10 +365,8 @@ sub _load_conf{
 		carp "unexpected elements in job $count  retrieved from $file" if keys %$job > @check;
 		$count++;
 	}
-	#print scalar @{$data}," jobs retrieved from file\n";
 	return $data;
 }
-
 sub _write_conf{
 	my $self = shift;
 	my $json = JSON::PP->new->utf8->pretty->canonical;
@@ -382,7 +378,6 @@ sub _write_conf{
 	print $fh $json->encode( $self->{ jobs } );
 	close $fh or croak "unable to close configuration file [$self->{ conf }]";	
 }
-
 sub _get_cron{
 	my $crontab = shift;
 	my $cron;
