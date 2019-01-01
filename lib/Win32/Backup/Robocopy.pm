@@ -302,7 +302,8 @@ sub restore{
 		}
 	}
 	if ( $is_history ){
-	
+		carp "HISTORY bkp!\n";
+		
 	}
 	else{
 		my ($stdout, $stderr, $exit) = capture {
