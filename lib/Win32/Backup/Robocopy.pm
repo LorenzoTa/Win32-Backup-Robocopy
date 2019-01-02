@@ -293,21 +293,39 @@ sub restore{
 	# check if it is a restore from a history backup
 	opendir my $dirh, $arg{from} or croak "unable to open dir [$arg{from}] to read";
 	my $is_history = 1;
+	my @time_dirs;
 	while (my $it = readdir($dirh) ){
 		next if $it =~/^\.\.?$/;
-		# if file or not matching timestamp used for folder is not history backup
-		if ( -f $it or $it !~/\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}/){
+		if ( 	-d File::Spec->catdir($arg{from},$it) 
+				and 
+				$it =~/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}$/ ){			
+			push @time_dirs, $it;
+		}
+		else{
 			$is_history = 0;
-			last;
+			undef @time_dirs;
+			last;		
 		}
 	}
+	close $dirh;
+	# HISTORY restore
 	if ( $is_history ){
-		carp "HISTORY bkp!\n";
-		
+		foreach my $src (sort @time_dirs){
+			my ($stdout, $stderr, $exit) = capture {
+				system( 'ROBOCOPY', 
+						File::Spec->catdir($arg{from},$src), 
+						$arg{to}, '*.*', '/E', '/DCOPY:T', '/SEC' );
+			};
+			# !!
+			$exit = $exit>>8;
+			my $exitstr = _robocopy_exitstring($exit);
+			print "$exitstr\n\n";
+		}		
 	}
+	# NORMAL (non history) restore
 	else{
 		my ($stdout, $stderr, $exit) = capture {
-		system( 'ROBOCOPY', $arg{from}, $arg{to}, '*.*', '/E', '/DCOPY:T', '/SEC' );
+			system( 'ROBOCOPY', $arg{from}, $arg{to}, '*.*', '/E', '/DCOPY:T', '/SEC' );
 		};
 		# !!
 		$exit = $exit>>8;

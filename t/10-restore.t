@@ -2,15 +2,13 @@
 use 5.006;
 use strict;
 use warnings;
-use Test::More;
+use Test::More qw(no_plan);
 use Test::Exception;
 use Win32::File qw(:DEFAULT GetAttributes SetAttributes);
 use Win32::Backup::Robocopy;
 
 use lib '.';
 use t::bkpscenario;
-
-plan tests => 1;
 
 #######################################################################
 # a real minimal bkp scenario
@@ -136,9 +134,7 @@ note("removed bakup scenario in $tbasedir");
 BAIL_OUT( "unable to create temporary folders!" ) unless $tbasedir;
 note("created bakup scenario in $tbasedir");
 
-$file1 = 'Foscolo_A_Zacinto.txt';
-
-		
+$file1 = 'Foscolo_A_Zacinto.txt';		
 
 # a backup with history
 $bkp = Win32::Backup::Robocopy->new(
@@ -164,4 +160,5 @@ foreach my $part(0..3){
 											from => File::Spec->catdir ( $tdst,'test' ), 
 											to => $tbasedir 
 );
+#print join "\n",$stdout, $stderr, $exit, $exitstr,"\n";
 
