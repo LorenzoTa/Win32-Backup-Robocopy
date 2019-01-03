@@ -45,13 +45,12 @@ dies_ok { $bkp->restore( from => File::Spec->catdir ( Win32::GetNextAvailDrive()
 
 # a valid backup
 $bkp->run;
-
 # a valid restore
-my ($stdout, $stderr, $exit, $exitstr) = $bkp->restore( 
-											from => File::Spec->catdir ( $tdst,'test' ), 
-											to => $tbasedir 
+my $return = $bkp->restore(  
+							from => File::Spec->catdir ( $tdst,'test' ), 
+							to => $tbasedir 
 );
-ok ( $exit < 8, "first restore completed succesfully" );
+ok ( $return->[0]{exit} < 8, "first restore completed succesfully" );
 
 # update the file in source
 $tfh1 = bkpscenario::open_file($tsrc,$file1);
@@ -61,12 +60,11 @@ bkpscenario::update_file($tfh1,1);
 # a valid backup again
 $bkp->run;
 # a valid restore again
-($stdout, $stderr, $exit, $exitstr) = $bkp->restore( 
-											from => File::Spec->catdir ( $tdst,'test' ), 
-											to => $tbasedir 
+$return = $bkp->restore(  
+							from => File::Spec->catdir ( $tdst,'test' ), 
+							to => $tbasedir 
 );
-ok ( $exit < 8, "second restore completed succesfully" );
-
+ok ( $return->[0]{exit} < 8, "second restore completed succesfully" );
 
 # update the file in source
 $tfh1 = bkpscenario::open_file($tsrc,$file1);
@@ -80,11 +78,11 @@ bkpscenario::update_file($tfh1,3);
 # a valid backup again
 $bkp->run;
 # a valid restore again
-($stdout, $stderr, $exit, $exitstr) = $bkp->restore( 
-											from => File::Spec->catdir ( $tdst,'test' ), 
-											to => $tbasedir 
+$return = $bkp->restore(  
+							from => File::Spec->catdir ( $tdst,'test' ), 
+							to => $tbasedir 
 );
-ok ( $exit < 8, "third restore completed succesfully" );
+ok ( $return->[0]{exit} < 8, "third restore completed succesfully" );
 
 # check if last file is complete..
 open my $lastfile, '<', File::Spec->catfile( $tbasedir, $file1) or 
@@ -109,11 +107,11 @@ $bkp = Win32::Backup::Robocopy->new(
 my (undef,undef,undef,undef,$createdfolder) = $bkp->run;
 
 
-($stdout, $stderr, $exit, $exitstr) = $bkp->restore( 
-											from => File::Spec->catdir ( $tdst,'test' ), 
-											to => $tbasedir 
+$return = $bkp->restore(  
+							from => File::Spec->catdir ( $tdst,'test' ), 
+							to => $tbasedir 
 );
-ok ( $exit < 8, "fourth restore completed succesfully.." );
+ok ( $return->[0]{exit} < 8, "fourth restore completed succesfully.." );
 
 opendir my $dirh, $tbasedir or BAIL_OUT "cannot open $tbasedir for reading!";
 while (my $item = readdir $dirh){
@@ -156,9 +154,10 @@ foreach my $part(0..3){
 	sleep 2;	
 }
 
-($stdout, $stderr, $exit, $exitstr) = $bkp->restore( 
-											from => File::Spec->catdir ( $tdst,'test' ), 
-											to => $tbasedir 
+$return = $bkp->restore(  
+							from => File::Spec->catdir ( $tdst,'test' ), 
+							to => $tbasedir 
 );
+
 #print join "\n",$stdout, $stderr, $exit, $exitstr,"\n";
 

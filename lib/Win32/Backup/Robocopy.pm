@@ -289,7 +289,11 @@ sub restore{
 	# check source directory
 	croak "'from' parameter points to a non existing directory!" unless -d $arg{from};
 	# check and create destination directory
-	make_path( $arg{to} ) unless -d $arg{to};	
+	make_path( $arg{to} ) unless -d $arg{to};
+	# check verbose to be a number
+	if ( $arg{verbose} and $arg{verbose} =~ /\D/ ){
+		croak "'verbose' parameter must be a number";
+	}
 	# check if it is a restore from a history backup
 	opendir my $dirh, $arg{from} or croak "unable to open dir [$arg{from}] to read";
 	my $is_history = 1;
@@ -308,18 +312,33 @@ sub restore{
 		}
 	}
 	close $dirh;
+	# to hold return value
+	# $ret will be an anonymous array with an entry for each operation done
+	# represented as anonymous hash with fields: stdout, stderr, exit and exitstring
+	# [
+	#   # operation 0
+	#   { stdout => $stdout, stderr => $stderr, exit => $exit, exitstr => $exitstr}
+	#   # operation 1
+	#   { stdout => $stdout, stderr => $stderr, exit => $exit, exitstr => $exitstr}
+	#   # operation 2..
+	# ]
+	my $ret = [];
 	# HISTORY restore
 	if ( $is_history ){
 		foreach my $src (sort @time_dirs){
+			$src = File::Spec->catdir($arg{from},$src);
+			print "restoring from [$src]\n" if $arg{verbose};
 			my ($stdout, $stderr, $exit) = capture {
-				system( 'ROBOCOPY', 
-						File::Spec->catdir($arg{from},$src), 
+				system( 'ROBOCOPY', $src, 
 						$arg{to}, '*.*', '/E', '/DCOPY:T', '/SEC' );
 			};
 			# !!
 			$exit = $exit>>8;
 			my $exitstr = _robocopy_exitstring($exit);
-			print "$exitstr\n\n";
+			push @$ret, {
+						stdout => $stdout, stderr => $stderr,
+						exit => $exit, exitstr => $exitstr
+			};		
 		}		
 	}
 	# NORMAL (non history) restore
@@ -330,8 +349,12 @@ sub restore{
 		# !!
 		$exit = $exit>>8;
 		my $exitstr = _robocopy_exitstring($exit);
-		return ($stdout, $stderr, $exit, $exitstr);
+		push @$ret, {
+						stdout => $stdout, stderr => $stderr,
+						exit => $exit, exitstr => $exitstr
+					};		
 	}
+	return $ret;
 }
 ##################################################################
 # not public subs
