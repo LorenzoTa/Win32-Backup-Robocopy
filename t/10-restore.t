@@ -4,7 +4,8 @@ use strict;
 use warnings;
 use Test::More qw(no_plan);
 use Test::Exception;
-use Win32::File qw(:DEFAULT GetAttributes SetAttributes);
+use DateTime::Tiny;
+use DateTime;
 use Win32::Backup::Robocopy;
 
 use lib '.';
@@ -15,7 +16,7 @@ use t::bkpscenario;
 #######################################################################
 my ($tbasedir,$tsrc,$tdst) = bkpscenario::create_dirs();
 BAIL_OUT( "unable to create temporary folders!" ) unless $tbasedir;
-note("created bakup scenario in $tbasedir");
+note("created backup scenario in $tbasedir");
 
 my $file1 = 'Foscolo_A_Zacinto.txt';
 my $tfh1 = bkpscenario::open_file($tsrc,$file1);
@@ -123,14 +124,14 @@ while (my $item = readdir $dirh){
 
 # remove the backup scenario
 bkpscenario::clean_all($tbasedir);
-note("removed bakup scenario in $tbasedir");
+note("removed backup scenario in $tbasedir");
 
 #######################################################################
 # a real minimal bkp scenario
 #######################################################################
 ($tbasedir,$tsrc,$tdst) = bkpscenario::create_dirs('test-backup-bis');
 BAIL_OUT( "unable to create temporary folders!" ) unless $tbasedir;
-note("created bakup scenario in $tbasedir");
+note("created backup scenario in $tbasedir");
 
 $file1 = 'Foscolo_A_Zacinto.txt';		
 
@@ -159,5 +160,25 @@ $return = $bkp->restore(
 							to => $tbasedir 
 );
 
-#print join "\n",$stdout, $stderr, $exit, $exitstr,"\n";
+# check if restored file is complete..
+open $lastfile, '<', File::Spec->catfile( $tbasedir, $file1) or 
+					BAIL_OUT ("unable to open file to check it ($file1 in $tbasedir!");
+while(<$lastfile>){ $last_line = $_}
+close $lastfile or BAIL_OUT("unable to close file!");
+ok( $last_line eq "  il fato illacrimata sepoltura.\n",
+					"restored file $file1 has the expected content");
 
+# check  _validate_upto before use it
+dies_ok { Win32::Backup::Robocopy->_validate_upto( 'akatasbra' ) } 
+	"_validate_upto is expected to die with insane string";
+
+my $epoch = 1222027320;
+print "DEBUG:",Win32::Backup::Robocopy->_validate_upto( $epoch ),"\n";
+# ok ( Win32::Backup::Robocopy->_validate_upto( $epoch ) eq $epoch,
+	# "_validate_upto ok with seconds since epoch");
+					
+					
+					
+# remove the backup scenario
+bkpscenario::clean_all($tbasedir);
+note("removed backup scenario in $tbasedir");					

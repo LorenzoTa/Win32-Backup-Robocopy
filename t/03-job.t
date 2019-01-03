@@ -11,7 +11,7 @@ use t::bkpscenario;
 
 my ($tbasedir,$tsrc,$tdst) = bkpscenario::create_dirs();
 BAIL_OUT( "unable to create temporary folders!" ) unless $tbasedir;
-note("created bakup scenario in $tbasedir");
+note("created backup scenario in $tbasedir");
 
 # new in JOB mode just needs conf croaks if destination drive does not exists
 my $bkp = Win32::Backup::Robocopy->new( conf => File::Spec->catfile($tbasedir,'my_config.json') );
@@ -78,4 +78,4 @@ ok(${$bkp->{jobs}}[2]->{next_time_descr} eq '--AS SOON AS POSSIBLE--', 'next_tim
 
 # remove the backup scenario
 bkpscenario::clean_all($tbasedir);
-note("removed bakup scenario in $tbasedir");
+note("removed backup scenario in $tbasedir");

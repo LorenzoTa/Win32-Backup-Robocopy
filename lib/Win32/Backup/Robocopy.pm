@@ -294,6 +294,10 @@ sub restore{
 	if ( $arg{verbose} and $arg{verbose} =~ /\D/ ){
 		croak "'verbose' parameter must be a number";
 	}
+	# check the upto parameter
+	if ( $arg{upto} ){
+			$arg{upto} = _validate_upto( $arg{upto} );
+	}
 	# check if it is a restore from a history backup
 	opendir my $dirh, $arg{from} or croak "unable to open dir [$arg{from}] to read";
 	my $is_history = 1;
@@ -312,20 +316,29 @@ sub restore{
 		}
 	}
 	close $dirh;
-	# to hold return value
+	# to hold return value:
 	# $ret will be an anonymous array with an entry for each operation done
 	# represented as anonymous hash with fields: stdout, stderr, exit and exitstring
 	# [
-	#   # operation 0
+	#   	# operation 0
 	#   { stdout => $stdout, stderr => $stderr, exit => $exit, exitstr => $exitstr}
-	#   # operation 1
+	#   	# operation 1
 	#   { stdout => $stdout, stderr => $stderr, exit => $exit, exitstr => $exitstr}
-	#   # operation 2..
+	#   	# operation 2..
 	# ]
 	my $ret = [];
 	# HISTORY restore
 	if ( $is_history ){
 		foreach my $src (sort @time_dirs){
+			# check if directory name exceeds 'upto' param
+			if ( $arg{upto} ){
+				my $current = DateTime::Tiny->from_string( $src )->DateTime->epoch;
+				if ( $current > $arg{upto} ){
+					print "[$src] and following folders skipped because newer than ".
+							DateTime::Tiny->as_string( $arg{upto} )."\n" if $arg{verbose};
+					last;
+				}
+			}
 			$src = File::Spec->catdir($arg{from},$src);
 			print "restoring from [$src]\n" if $arg{verbose};
 			my ($stdout, $stderr, $exit) = capture {
@@ -359,6 +372,41 @@ sub restore{
 ##################################################################
 # not public subs
 ##################################################################
+sub _validate_upto{
+	my $time = shift;
+	unless (  	
+					# a time from epoch
+					$time =~ /^\d+$/  				or
+					# a valid string
+					$time =~ /^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}$/ or
+					# a DateTime::Tiny object
+					ref $time eq 'DateTime::Tiny' 	or
+					# a DateTime object
+					ref $time eq 'DateTime'				
+			){
+				croak "parameter 'upto' must be: seconds from epoch or a ".
+						"string in the form: YYYY-MM-DDTHH-MM-SS or ".
+						"a DateTime::Tiny object or a DateTime object!";
+	}
+	# is a time string of seconds from epoch, let's hope..
+	if ( $time =~ /^\d+$/ ){
+		return $time;
+	}
+	# is astring as accepted by DateTime::Tiny
+	elsif ( $time =~ /^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}$/ ){
+		return DateTime::Tiny->from_string( $time )->DateTime->epoch;
+	}
+	# is a DateTime::Tiny object
+	elsif ( ref $time eq 'DateTime::Tiny' ){
+		return $time->DateTime->epoch;
+	}
+	# is a DateTime object
+	elsif ( ref $time eq 'DateTime' ){
+		return $time->epoch;
+	}
+	# uch!
+	else { croak "Error in 'upto' parameter conversion to epoch!"}
+}
 sub _robocopy_exitstring{
 	my $exit = shift;
 	#$exit = $exit>>8;
