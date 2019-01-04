@@ -84,13 +84,8 @@ $return = $bkp->restore(
 ok ( $return->[0]{exit} < 8, "third restore completed succesfully" );
 
 # check if last file is complete..
-open my $lastfile, '<', File::Spec->catfile( $tbasedir, $file1) or 
-					BAIL_OUT ("unable to open file to check it ($file1 in $tbasedir!");
-my $last_line;
-while(<$lastfile>){ $last_line = $_}
-close $lastfile or BAIL_OUT("unable to close file!");
-ok( $last_line eq "  il fato illacrimata sepoltura.\n","file $file1 has the expected content in folder $tbasedir");
-
+ok (bkpscenario::check_last_line($tbasedir, $file1, "  il fato illacrimata sepoltura.\n"),
+	"file $file1 has the expected content in folder $tbasedir");
 
 # a history backup on the same destination will fail as history restore
 # because not ALL directories and file will be of the required timestamp format
