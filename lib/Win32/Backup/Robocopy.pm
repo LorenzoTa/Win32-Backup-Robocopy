@@ -332,7 +332,8 @@ sub restore{
 		foreach my $src (sort @time_dirs){
 			# check if directory name exceeds 'upto' param
 			if ( $arg{upto} ){
-				my $current = DateTime::Tiny->from_string( $src )->DateTime->epoch;
+				(my $sanitized_src = $src ) =~ s/T(\d{2})[\-:](\d{2})[\-:](\d{2})$/T$1:$2:$3/; 
+				my $current = DateTime::Tiny->from_string( $sanitized_src )->DateTime->epoch;
 				if ( $current > $arg{upto} ){
 					print "[$src] and following folders skipped because newer than ".
 							DateTime::Tiny->as_string( $arg{upto} )."\n" if $arg{verbose};

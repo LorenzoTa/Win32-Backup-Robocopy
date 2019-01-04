@@ -35,21 +35,21 @@ sub update_file{
 		"Né più mai toccherò le sacre sponde\n".
 		"  ove il mio corpo fanciulletto giacque,\n".
 		"  Zacinto mia, che te specchi nell'onde\n".
-		"  del greco mar da cui vergine nacque\n"
+		"  del greco mar da cui vergine nacque"
 		,
 		# part 1
-		"Venere, e fea quelle isole feconde\n".
+		"\nVenere, e fea quelle isole feconde\n".
 		"  col suo primo sorriso, onde non tacque\n".
 		"  le tue limpide nubi e le tue fronde\n".
-		"  l'inclito verso di colui che l'acque\n"
+		"  l'inclito verso di colui che l'acque"
 		,
 		# part 2
-		"Cantò fatali, ed il diverso esiglio\n".
+		"\nCantò fatali, ed il diverso esiglio\n".
 		"  per cui bello di fama e di sventura\n".
-		"  baciò la sua petrosa Itaca Ulisse\n\n"
+		"  baciò la sua petrosa Itaca Ulisse"
 		,
 		# part 3
-		"Tu non altro che il canto avrai del figlio,\n".
+		"\n\nTu non altro che il canto avrai del figlio,\n".
 		"  o materna mia terra; a noi prescrisse\n".
 		"  il fato illacrimata sepoltura.\n"
 	);
@@ -61,12 +61,11 @@ sub check_last_line{
 	my $folder = shift;
 	my $file = shift;
 	my $line = shift;
-	my $fh = open_file($folder, $file);
-	
+	open my $fh,'<', File::Spec->catfile($folder, $file) 
+		or croak "impossible to open $file in $folder!";
 	my $last_line;
 	my $ret;
 	while(<$fh>){ $last_line = $_}
-	carp "LINE $_";
 	close $fh or croak "unable to close file!";
 	if ( $last_line eq $line ){
 		$ret = 1;

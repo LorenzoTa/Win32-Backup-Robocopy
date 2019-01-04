@@ -87,29 +87,53 @@ foreach my $part(0..3){
 	my (undef,undef,$exit,undef,$createdfolder) = $bkp->run;
 	BAIL_OUT "failed backup!" unless $exit < 8;
 	push @created_folders,$createdfolder;
-	note ("backup made to $createdfolder");
+	note ("updated $file1 and backed up to $createdfolder");
 	sleep 2;	
 }
 
-my $return = $bkp->restore(  
-							from => File::Spec->catdir ( $tdst,'test' ), 
-							to => $tbasedir 
+# restore all backups because of no 'upto' parameter
+$bkp->restore(  
+				from => File::Spec->catdir ( $tdst,'test' ), 
+				to => $tbasedir 
 );
 
 # check if restored file is complete..
 ok (bkpscenario::check_last_line($tbasedir, $file1, "  il fato illacrimata sepoltura.\n"),
-	"restored file $file1 has the expected content");
+	"restored file $file1 has the expected content ( restoring all history folders )");
 
-# my $last_line;
-# open my $lastfile, '<', File::Spec->catfile( $tbasedir, $file1) or 
-					# BAIL_OUT ("unable to open file to check it ($file1 in $tbasedir!");
-# while(<$lastfile>){ $last_line = $_}
-# close $lastfile or BAIL_OUT("unable to close file!");
-# ok( $last_line eq "  il fato illacrimata sepoltura.\n",
-					# "restored file $file1 has the expected content");
+# restore upto third backup	
+$bkp->restore(  
+				from => File::Spec->catdir ( $tdst,'test' ), 
+				to => $tbasedir,
+				upto => $created_folders[2],
+				# BROKEN verbose =>1,
+);					
+# check if restored file has right content
+ok (bkpscenario::check_last_line($tbasedir, $file1, "  baciò la sua petrosa Itaca Ulisse"),
+	"restored file $file1 has the expected content ( restoring upto $created_folders[2] )");
 
-					
-					
+# restore upto second backup
+$bkp->restore(  
+				from => File::Spec->catdir ( $tdst,'test' ), 
+				to => $tbasedir,
+				upto => $created_folders[1],
+				# BROKEN verbose =>1,
+);					
+# check if restored file has right content
+ok (bkpscenario::check_last_line($tbasedir, $file1, "  l'inclito verso di colui che l'acque"),
+	"restored file $file1 has the expected content ( restoring upto $created_folders[1] )");
+
+# restore upto first backup
+$bkp->restore(  
+				from => File::Spec->catdir ( $tdst,'test' ), 
+				to => $tbasedir,
+				upto => $created_folders[0],
+				# BROKEN verbose =>1,
+);					
+# check if restored file has right content
+ok (bkpscenario::check_last_line($tbasedir, $file1, "  del greco mar da cui vergine nacque"),
+	"restored file $file1 has the expected content ( restoring upto $created_folders[0] )");
+	
 # remove the backup scenario
 bkpscenario::clean_all($tbasedir);
 note("removed backup scenario in $tbasedir");					
