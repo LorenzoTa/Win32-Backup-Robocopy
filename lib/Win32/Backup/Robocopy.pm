@@ -378,7 +378,7 @@ sub _validate_upto{
 					# a time from epoch
 					$time =~ /^\d+$/  				or
 					# a valid string
-					$time =~ /^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}$/ or
+					$time =~ /^\d{4}-\d{2}-\d{2}T\d{2}[\-:]\d{2}[\-:]\d{2}$/ or
 					# a DateTime::Tiny object
 					ref $time eq 'DateTime::Tiny' 	or
 					# a DateTime object
@@ -393,7 +393,8 @@ sub _validate_upto{
 		return $time;
 	}
 	# is astring as accepted by DateTime::Tiny
-	elsif ( $time =~ /^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}$/ ){
+	elsif ( $time =~ /^\d{4}-\d{2}-\d{2}T\d{2}[\-:]\d{2}[\-:]\d{2}$/ ){
+		$time =~ s/T(\d{2})[\-:](\d{2})[\-:](\d{2})$/T$1:$2:$3/;
 		return DateTime::Tiny->from_string( $time )->DateTime->epoch;
 	}
 	# is a DateTime::Tiny object
