@@ -4,8 +4,6 @@ use strict;
 use warnings;
 use Test::More qw(no_plan);
 use Test::Exception;
-use DateTime::Tiny;
-use DateTime;
 use Win32::Backup::Robocopy;
 
 use lib '.';
