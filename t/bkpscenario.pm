@@ -57,6 +57,23 @@ sub update_file{
 	close $fh or croak "Unable to close file!";
 }
 
+sub check_last_line{
+	my $folder = shift;
+	my $file = shift;
+	my $line = shift;
+	my $fh = open_file($folder, $file);
+	
+	my $last_line;
+	my $ret;
+	while(<$fh>){ $last_line = $_}
+	carp "LINE $_";
+	close $fh or croak "unable to close file!";
+	if ( $last_line eq $line ){
+		$ret = 1;
+	}
+	return $ret;
+}
+
 sub clean_all{
 	my $dir = shift;
 	remove_tree $dir or croak "impossible to remove directory [$dir]!";

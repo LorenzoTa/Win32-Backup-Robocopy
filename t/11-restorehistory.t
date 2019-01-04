@@ -97,13 +97,16 @@ my $return = $bkp->restore(
 );
 
 # check if restored file is complete..
-my $last_line;
-open my $lastfile, '<', File::Spec->catfile( $tbasedir, $file1) or 
-					BAIL_OUT ("unable to open file to check it ($file1 in $tbasedir!");
-while(<$lastfile>){ $last_line = $_}
-close $lastfile or BAIL_OUT("unable to close file!");
-ok( $last_line eq "  il fato illacrimata sepoltura.\n",
-					"restored file $file1 has the expected content");
+ok (bkpscenario::check_last_line($tbasedir, $file1, "  il fato illacrimata sepoltura.\n"),
+	"restored file $file1 has the expected content");
+
+# my $last_line;
+# open my $lastfile, '<', File::Spec->catfile( $tbasedir, $file1) or 
+					# BAIL_OUT ("unable to open file to check it ($file1 in $tbasedir!");
+# while(<$lastfile>){ $last_line = $_}
+# close $lastfile or BAIL_OUT("unable to close file!");
+# ok( $last_line eq "  il fato illacrimata sepoltura.\n",
+					# "restored file $file1 has the expected content");
 
 					
 					
