@@ -1001,6 +1001,53 @@ C<fields> parameter.
             next_time_descr = Mon Apr  1 00:03:00 2019
 
 
+			
+			
+=head1 RESTORE
+
+=head2 restore
+
+The module provides a method to restore from a backup to a given destination. It is just
+a copy of all files and directories found in a given source directory, to a  given destination (that will be created if it does not already exists).
+
+This method just needs two parameters: C<from> and C<to> like in:
+
+    $bkp->restore(  
+                    from => 'X:/external/scripts_bkp' , 
+                    to 	 => 'D:/local/scripts' 
+    );
+
+	
+=head2 history restore
+
+When each folder contained in the given source to restore has a name as given by a C<history> backup, eg. like C<2022-04-12T09-02-36> and the folder used as source to restore contains only  folders and no other object at all, then, if these conditions are met, each folder will be used as source starting from the older one to the newer one.
+
+This behaviour permits a restore to a point in time using the C<upto> parameter in the C<restore> call. Let's say you have backed up some folder with an C<history> backup and now 
+tou have the following folders:
+
+	2019-01-04T20-29-10
+	2019-01-05T20-29-10
+	2019-01-06T20-29-10
+	2019-01-07T20-29-10
+	
+all contained in C<X:\external\photos> and you discover that the day 7 of January at 14:00 all your pictures got corrupted ( so the last backup contains a lot of invalid files ) you can restore only pictures up to the January 6 using:
+
+    $bkp->restore(  
+                    from => 'X:\external\photos', 
+                    to => 'C:\PICS\restore_up_to_january_6',
+                    upto => '2019-01-06T20-29-10',					
+    );
+	
+and you'll have restored only the photos backed up in the firsts three folder and not in the fourth one.
+
+=head2 returned value 
+
+The return value of a C<restore> call will be an anonymous array with an element for each operation done by the method. If it was a simple restore the array will hold just one element but
+if it was a history restore each operation (using a different folder as surce) will push an 
+element in the array. These array elements are anonymoous hashes with four keys:  C<stdout>, C<stderr>, C<exit> and C<exitstring> of each operation respectively.
+
+
+
 =head1 CONFIGURATION FILE
 
 The configuration file holds JSON data into an array each element of the array being a job, contained in a hash.
