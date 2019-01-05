@@ -293,6 +293,12 @@ sub restore{
 	if ( $arg{upto} ){
 			$arg{upto} = _validate_upto( $arg{upto} );
 	}
+	# check the extraparam parameter
+	my @extra =  ref $arg{extraparam} eq 'ARRAY' 	?
+					@{ $arg{extraparam} }			:
+					split /\s+/, $arg{extraparam} // ''	;
+	my @robo_params = ( '*.*', '/E', '/DCOPY:T', '/SEC', '/NP', @extra );
+	# build parameters to ROBOCOPY using some default and extraparam
 	# check if it is a restore from a history backup
 	opendir my $dirh, $arg{from} or croak "unable to open dir [$arg{from}] to read";
 	my $is_history = 1;
@@ -337,7 +343,7 @@ sub restore{
 			}
 			$src = File::Spec->catdir($arg{from},$src);
 			print "restoring from [$src]\n" if $arg{verbose};
-			my @cmdargs = ( $src, $arg{to}, '*.*', '/E', '/DCOPY:T', '/SEC' );
+			my @cmdargs = ( $src, $arg{to}, @robo_params );
 			my ($stdout, $stderr, $exit, $exitstr) = _wrap_robocpy( @cmdargs );
 			push @$ret, {
 						stdout => $stdout, stderr => $stderr,
@@ -347,7 +353,7 @@ sub restore{
 	}
 	# NORMAL (non history) restore
 	else{
-		my @cmdargs = ( $arg{from}, $arg{to}, '*.*', '/E', '/DCOPY:T', '/SEC' );
+		my @cmdargs = ( $arg{from}, $arg{to}, @robo_params );
 		my ($stdout, $stderr, $exit, $exitstr) = _wrap_robocpy( @cmdargs );
 		push @$ret, {
 						stdout => $stdout, stderr => $stderr,
