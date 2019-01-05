@@ -133,13 +133,25 @@ sub run	{
 						# extra parameters for robocopy
 						@extra
 						;
+	# my ($stdout, $stderr, $exit) = capture {
+	# system( 'ROBOCOPY', @cmdargs );
+	# };
+	# # !!
+	# $exit = $exit>>8;
+	# my $exitstr = _robocopy_exitstring($exit);
+	my ($stdout, $stderr, $exit, $exitstr) = _wrap_robocpy( @cmdargs );
+	return $stdout, $stderr, $exit, $exitstr, $date_folder;
+}
+
+sub _wrap_robocpy{
+	my @cmdargs = @_;
 	my ($stdout, $stderr, $exit) = capture {
-	system( 'ROBOCOPY', @cmdargs );
+		system( 'ROBOCOPY.EXE', @cmdargs );
 	};
 	# !!
 	$exit = $exit>>8;
 	my $exitstr = _robocopy_exitstring($exit);
-	return $stdout, $stderr, $exit, $exitstr, $date_folder;
+	return $stdout, $stderr, $exit, $exitstr;	
 }
 
 sub job {
