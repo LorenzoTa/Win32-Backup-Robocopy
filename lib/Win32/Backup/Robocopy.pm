@@ -23,10 +23,10 @@ our $VERSION = 5;
 
 # perl -I ./lib -MWin32::Backup::Robocopy -e "$bkp=Win32::Backup::Robocopy->new(name=>'test',src=>'.',dst=>'H:/test',waitdrive=>1); $bkp->run()"
 
-# perl -nlE "BEGIN{@ARGV=glob shift}last if /__DATA__/;$c++ unless /^$|^\s*#/}{say $c" "./lib/Win32/Backup/Robocopy.pm"
-# 321
+# perl -nlE "BEGIN{@ARGV=glob shift}last if /^__DATA__/;$c++ unless /^$|^\s*#/}{say $c" "./lib/Win32/Backup/*.pm"
+# 477
 
-# perl -nlE "BEGIN{@ARGV=glob shift}last if /__DATA__/;$c++ unless /^$|^\s*#/}{say $c" "./t/*.t"
+# perl -nlE "BEGIN{@ARGV=glob shift}last if /^__DATA__/;$c++ unless /^$|^\s*#/}{say $c" "./t/*.t"
 # 376
 
 # perl -I ./lib -MWin32::Backup::Robocopy -MData::Dump -e "$bkp=Win32::Backup::Robocopy->new(conf=>'bkpconfig.json'); $bkp->job(src=>'.',dst=>'x:/dest',name=>'first',cron=>'* 4 * * *'); $bkp->runjobs"
