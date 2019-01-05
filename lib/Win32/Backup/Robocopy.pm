@@ -133,25 +133,8 @@ sub run	{
 						# extra parameters for robocopy
 						@extra
 						;
-	# my ($stdout, $stderr, $exit) = capture {
-	# system( 'ROBOCOPY', @cmdargs );
-	# };
-	# # !!
-	# $exit = $exit>>8;
-	# my $exitstr = _robocopy_exitstring($exit);
 	my ($stdout, $stderr, $exit, $exitstr) = _wrap_robocpy( @cmdargs );
 	return $stdout, $stderr, $exit, $exitstr, $date_folder;
-}
-
-sub _wrap_robocpy{
-	my @cmdargs = @_;
-	my ($stdout, $stderr, $exit) = capture {
-		system( 'ROBOCOPY.EXE', @cmdargs );
-	};
-	# !!
-	$exit = $exit>>8;
-	my $exitstr = _robocopy_exitstring($exit);
-	return $stdout, $stderr, $exit, $exitstr;	
 }
 
 sub job {
@@ -354,13 +337,6 @@ sub restore{
 			}
 			$src = File::Spec->catdir($arg{from},$src);
 			print "restoring from [$src]\n" if $arg{verbose};
-			# my ($stdout, $stderr, $exit) = capture {
-				# system( 'ROBOCOPY', $src, 
-						# $arg{to}, '*.*', '/E', '/DCOPY:T', '/SEC' );
-			# };
-				# # !!
-			# $exit = $exit>>8;
-			# my $exitstr = _robocopy_exitstring($exit);
 			my @cmdargs = ( $src, $arg{to}, '*.*', '/E', '/DCOPY:T', '/SEC' );
 			my ($stdout, $stderr, $exit, $exitstr) = _wrap_robocpy( @cmdargs );
 			push @$ret, {
@@ -371,12 +347,6 @@ sub restore{
 	}
 	# NORMAL (non history) restore
 	else{
-		# my ($stdout, $stderr, $exit) = capture {
-			# system( 'ROBOCOPY', $arg{from}, $arg{to}, '*.*', '/E', '/DCOPY:T', '/SEC' );
-		# };
-		# # !!
-		# $exit = $exit>>8;
-		# my $exitstr = _robocopy_exitstring($exit);
 		my @cmdargs = ( $arg{from}, $arg{to}, '*.*', '/E', '/DCOPY:T', '/SEC' );
 		my ($stdout, $stderr, $exit, $exitstr) = _wrap_robocpy( @cmdargs );
 		push @$ret, {
@@ -389,6 +359,18 @@ sub restore{
 ##################################################################
 # not public subs
 ##################################################################
+
+sub _wrap_robocpy{
+	my @cmdargs = @_;
+	my ($stdout, $stderr, $exit) = capture {
+		system( 'ROBOCOPY.EXE', @cmdargs );
+	};
+	# !!
+	$exit = $exit>>8;
+	my $exitstr = _robocopy_exitstring($exit);
+	return $stdout, $stderr, $exit, $exitstr;	
+}
+
 sub _validate_upto{
 	my $time = shift;
 	unless (  	
