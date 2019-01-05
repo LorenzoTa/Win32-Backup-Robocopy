@@ -354,13 +354,15 @@ sub restore{
 			}
 			$src = File::Spec->catdir($arg{from},$src);
 			print "restoring from [$src]\n" if $arg{verbose};
-			my ($stdout, $stderr, $exit) = capture {
-				system( 'ROBOCOPY', $src, 
-						$arg{to}, '*.*', '/E', '/DCOPY:T', '/SEC' );
-			};
-			# !!
-			$exit = $exit>>8;
-			my $exitstr = _robocopy_exitstring($exit);
+			# my ($stdout, $stderr, $exit) = capture {
+				# system( 'ROBOCOPY', $src, 
+						# $arg{to}, '*.*', '/E', '/DCOPY:T', '/SEC' );
+			# };
+			# # !!
+			# $exit = $exit>>8;
+			# my $exitstr = _robocopy_exitstring($exit);
+			my @cmdargs = ( $src, $arg{to}, '*.*', '/E', '/DCOPY:T', '/SEC' );
+			my ($stdout, $stderr, $exit, $exitstr) = _wrap_robocpy( @cmdargs );
 			push @$ret, {
 						stdout => $stdout, stderr => $stderr,
 						exit => $exit, exitstr => $exitstr
