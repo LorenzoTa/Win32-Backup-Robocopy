@@ -14,7 +14,7 @@ use t::bkpscenario;
 #######################################################################
 my ($tbasedir,$tsrc,$tdst) = bkpscenario::create_dirs();
 BAIL_OUT( "unable to create temporary folders!" ) unless $tbasedir;
-note("created bakup scenario in $tbasedir");
+note("created backup scenario in $tbasedir");
 
 # configuration in tempp dir
 my $conf = File::Spec->catfile($tbasedir,'my_config_tris.json');
@@ -70,4 +70,4 @@ is_deeply( $data, $bkp->{jobs}, 'job data from JSON file is deeply equal to jobs
 
 # remove the backup scenario
 bkpscenario::clean_all($tbasedir);
-note("removed bakup scenario in $tbasedir");
+note("removed backup scenario in $tbasedir");

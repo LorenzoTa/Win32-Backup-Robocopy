@@ -16,7 +16,7 @@ use t::bkpscenario;
 #######################################################################
 my ($tbasedir,$tsrc,$tdst) = bkpscenario::create_dirs();
 BAIL_OUT( "unable to create temporary folders!" ) unless $tbasedir;
-note("created bakup scenario in $tbasedir");
+note("created backup scenario in $tbasedir");
 
 # configuration in temp dir
 my $conf = File::Spec->catfile($tbasedir,'my_config.json');
@@ -80,4 +80,4 @@ dies_ok { $bkp = Win32::Backup::Robocopy->new( config => $conf.'b' )}
 
 # remove the backup scenario
 bkpscenario::clean_all($tbasedir);
-note("removed bakup scenario in $tbasedir");
+note("removed backup scenario in $tbasedir");

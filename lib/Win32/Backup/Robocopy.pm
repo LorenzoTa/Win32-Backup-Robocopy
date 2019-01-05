@@ -10,7 +10,7 @@ use JSON::PP; # only this support sort_by(custom_func)
 use Capture::Tiny qw(capture);
 use DateTime::Tiny;
 use Algorithm::Cron;
-our $VERSION = 4;
+our $VERSION = 5;
 
 # perl -I ./lib ./t/01-new.t & perl -I ./lib ./t/02-run.t &  perl -I ./lib ./t/03-job.t & perl -I ./lib ./t/04-runjobs.t & perl -I ./lib  ./t/05-writeconf.t
 # AKA
@@ -70,6 +70,7 @@ sub new {
 				#writelog	=> $arg {writelog} // 1,
 	}, $class;
 }
+
 sub run	{
 	my $self = shift;
 	my %opt = _default_run_params(@_);
@@ -82,13 +83,10 @@ sub run	{
 	}
 	# we are in RUN mode: continue..
 	my $src = $self->{src};
-	#my $dst = $self->{dst};
-	#
 	my $dst = File::Spec->file_name_is_absolute( $self->{dst} ) ?
 				$self->{dst}									:
 				File::Spec->rel2abs( $self->{dst} ) ;
 	$dst = File::Spec->catdir( $dst, $self->{name} );
-	#
 	# modify destination if history = 1
 	my $date_folder;
 	if ( $self->{history} ){
@@ -135,38 +133,12 @@ sub run	{
 						# extra parameters for robocopy
 						@extra
 						;
-	###########################################	print "Executing:\nROBOCOPY @cmdargs\n";
 	my ($stdout, $stderr, $exit) = capture {
-	  system( 'ROBOCOPY', @cmdargs );
+	system( 'ROBOCOPY', @cmdargs );
 	};
 	# !!
 	$exit = $exit>>8;
-	# print "OUT:\n$stdout\nERR:\n$stderr\nEXIT:\n$exit\n";
-	my %exit_code = (
-		0   =>  'No errors occurred, and no copying was done.'.
-				'The source and destination directory trees are completely synchronized.',
-		1   =>  'One or more files were copied successfully (that is, new files have arrived).',
-		2   =>  'Some Extra files or directories were detected. No files were copied'.
-				'Examine the output log for details.',
-		4   =>  'Some Mismatched files or directories were detected.'.
-				'Examine the output log. Housekeeping might be required.',
-		8   =>  'Some files or directories could not be copied'.
-				'(copy errors occurred and the retry limit was exceeded).'.
-				'Check these errors further.',
-		16  =>  'Serious error. Robocopy did not copy any files.'.
-				'Either a usage error or an error due to insufficient access privileges'.
-				'on the source or destination directories.'
-	);
-	my $exitstr = '';
-	foreach my $code(sort {$a<=>$b} keys %exit_code){
-		#print $code.' '.($exit & $code)."\n";
-		if ( $exit == 0){
-			$exitstr .= $exit_code{0};
-			last;
-		}
-		$exitstr .= $exit_code{$code} if ($exit & $code);
-	}
-	#print "EXITSTRING:\n$exitstr\n";
+	my $exitstr = _robocopy_exitstring($exit);
 	return $stdout, $stderr, $exit, $exitstr, $date_folder;
 }
 
@@ -178,7 +150,7 @@ sub job {
 				"See the docs of ".__PACKAGE__." about different modes of instantiation\n";
 		return undef;
 	}
-	#use deafults as for run method if not specified otherwise
+	# use defaults as for run method if not specified otherwise
 	my %opt = _verify_args(@_);
 	%opt = _default_new_params( %opt );	
 	%opt = _default_run_params( %opt );
@@ -218,10 +190,6 @@ sub job {
 	my $json = JSON::PP->new->utf8->pretty->canonical;
 	$json->canonical(1);
 	$json->sort_by( \&_ordered_json );
-	#if ( $opt{ debug } ){
-		#print "returned JSON:\n",$json->encode( $jobconf ),"\n";
-	#}
-	# push the job in the queue
 	push @{ $self->{jobs} }, $jobconf;
 	# clean the main object of other (now unwanted) properties
 	$self->_write_conf;
@@ -237,23 +205,12 @@ sub runjobs{
 		return undef;
 	}
 	# accept a range instead of all jobs
-#print "IN RUNJOBS \@_ is [@_]\n";	
 	my $range = ( @_ ? (join ',',@_) : undef) // join '..',0,$#{ $self->{ jobs }};
-#print "IN RUNJOBS range is [$range]\n";	
 	my @range = _validrange( $range );
-	
-#print "resulting range: @range\n"; return;
-#return;	
 	foreach my $job( @{ $self->{ jobs } }[@range] ){
 		if ( $job->{ verbose } ){
 			print "considering job [$job->{ name }]\n";
 		}
-		# mosso in job
-		# if ( $job->{ first_time_run } ){
-					# $job->{ next_time } = 0;
-					# $job->{ first_time_run } = 0;
-		# }
-		# time limit exceeded: run the job
 		if ( time > $job->{ next_time } ){
 			print "executing job [$job->{ name }]\n";
 			# create a bkp object using values from the job
@@ -268,7 +225,7 @@ sub runjobs{
 				verbose 	=> $job->{verbose} // 0,
 				debug		=> $job->{debug} // 0,
 				#writelog	=> $job->{writelog} // 1,
-			},ref $self;#__PACKAGE__;		
+			},ref $self;		
 			
 			$bkp->run( 
 				archive => $job->{archive},
@@ -289,9 +246,9 @@ sub runjobs{
 		else {
 			print "is not time to execute [$job->{ name }] (next time will be $job->{ next_time_descr })\n";
 		}
-		#use Data::Dump; dd $job;
 	}	
 }
+
 sub listjobs{
 	my $self = shift;
 	my %arg = @_;
@@ -318,9 +275,168 @@ sub listjobs{
 	}
 	return @res;
 }
+
+sub restore{
+	my $self = shift;
+	my %arg = @_;
+	for ( 'from', 'to' ){
+		croak "restore need a $_ param!" unless $arg{$_};
+	}
+	map { $_ =  File::Spec->file_name_is_absolute( $_ ) ?
+				$_ 										:
+				File::Spec->rel2abs( $_ ) ;
+	} $arg{from}, $arg{to};
+	# check source directory
+	croak "'from' parameter points to a non existing directory!" unless -d $arg{from};
+	# check and create destination directory
+	make_path( $arg{to} ) unless -d $arg{to};
+	# check verbose to be a number
+	if ( $arg{verbose} and $arg{verbose} =~ /\D/ ){
+		croak "'verbose' parameter must be a number";
+	}
+	# check the upto parameter
+	if ( $arg{upto} ){
+			$arg{upto} = _validate_upto( $arg{upto} );
+	}
+	# check if it is a restore from a history backup
+	opendir my $dirh, $arg{from} or croak "unable to open dir [$arg{from}] to read";
+	my $is_history = 1;
+	my @time_dirs;
+	while (my $it = readdir($dirh) ){
+		next if $it =~/^\.\.?$/;
+		if ( 	-d File::Spec->catdir($arg{from},$it) 
+				and 
+				$it =~/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}$/ ){			
+			push @time_dirs, $it;
+		}
+		else{
+			$is_history = 0;
+			undef @time_dirs;
+			last;		
+		}
+	}
+	close $dirh;
+	# to hold return value:
+	# $ret will be an anonymous array with an entry for each operation done
+	# represented as anonymous hash with fields: stdout, stderr, exit and exitstring
+	# [
+	#   	# operation 0
+	#   { stdout => $stdout, stderr => $stderr, exit => $exit, exitstr => $exitstr}
+	#   	# operation 1
+	#   { stdout => $stdout, stderr => $stderr, exit => $exit, exitstr => $exitstr}
+	#   	# operation 2..
+	# ]
+	my $ret = [];
+	# HISTORY restore
+	if ( $is_history ){
+		foreach my $src (sort @time_dirs){
+			# check if directory name exceeds 'upto' param
+			if ( $arg{upto} ){
+				(my $sanitized_src = $src ) =~ s/T(\d{2})[\-:](\d{2})[\-:](\d{2})$/T$1:$2:$3/; 
+				my $current = DateTime::Tiny->from_string( $sanitized_src )->DateTime->epoch;
+				if ( $current > $arg{upto} ){
+				print "[$src] and following folders skipped because newer than: ".
+							(scalar gmtime( $arg{upto} ))."\n" if $arg{verbose};
+					last;
+				}
+			}
+			$src = File::Spec->catdir($arg{from},$src);
+			print "restoring from [$src]\n" if $arg{verbose};
+			my ($stdout, $stderr, $exit) = capture {
+				system( 'ROBOCOPY', $src, 
+						$arg{to}, '*.*', '/E', '/DCOPY:T', '/SEC' );
+			};
+			# !!
+			$exit = $exit>>8;
+			my $exitstr = _robocopy_exitstring($exit);
+			push @$ret, {
+						stdout => $stdout, stderr => $stderr,
+						exit => $exit, exitstr => $exitstr
+			};		
+		}		
+	}
+	# NORMAL (non history) restore
+	else{
+		my ($stdout, $stderr, $exit) = capture {
+			system( 'ROBOCOPY', $arg{from}, $arg{to}, '*.*', '/E', '/DCOPY:T', '/SEC' );
+		};
+		# !!
+		$exit = $exit>>8;
+		my $exitstr = _robocopy_exitstring($exit);
+		push @$ret, {
+						stdout => $stdout, stderr => $stderr,
+						exit => $exit, exitstr => $exitstr
+					};		
+	}
+	return $ret;
+}
 ##################################################################
 # not public subs
 ##################################################################
+sub _validate_upto{
+	my $time = shift;
+	unless (  	
+					# a time from epoch
+					$time =~ /^\d+$/  				or
+					# a valid string
+					$time =~ /^\d{4}-\d{2}-\d{2}T\d{2}[\-:]\d{2}[\-:]\d{2}$/ or
+					# a DateTime::Tiny object
+					ref $time eq 'DateTime::Tiny' 	or
+					# a DateTime object
+					ref $time eq 'DateTime'				
+			){
+				croak "parameter 'upto' must be: seconds from epoch or a ".
+						"string in the form: YYYY-MM-DDTHH-MM-SS or ".
+						"a DateTime::Tiny object or a DateTime object!";
+	}
+	# is a time string of seconds from epoch, let's hope..
+	if ( $time =~ /^\d+$/ ){
+		return $time;
+	}
+	# is astring as accepted by DateTime::Tiny
+	elsif ( $time =~ /^\d{4}-\d{2}-\d{2}T\d{2}[\-:]\d{2}[\-:]\d{2}$/ ){
+		$time =~ s/T(\d{2})[\-:](\d{2})[\-:](\d{2})$/T$1:$2:$3/;
+		return DateTime::Tiny->from_string( $time )->DateTime->epoch;
+	}
+	# is a DateTime::Tiny object
+	elsif ( ref $time eq 'DateTime::Tiny' ){
+		return $time->DateTime->epoch;
+	}
+	# is a DateTime object
+	elsif ( ref $time eq 'DateTime' ){
+		return $time->epoch;
+	}
+	# uch!
+	else { croak "Error in 'upto' parameter conversion to epoch!"}
+}
+sub _robocopy_exitstring{
+	my $exit = shift;
+	#$exit = $exit>>8;
+	my %exit_code = (
+		0   =>  'No errors occurred, and no copying was done. '.
+				'The source and destination directory trees are completely synchronized.',
+		1   =>  'One or more files were copied successfully (that is, new files have arrived).',
+		2   =>  'Some Extra files or directories were detected. No files were copied. '.
+				'Examine the output log for details.',
+		4   =>  'Some Mismatched files or directories were detected. '.
+				'Examine the output log. Housekeeping might be required.',
+		8   =>  'Some files or directories could not be copied '.
+				'(copy errors occurred and the retry limit was exceeded). '.
+				'Check these errors further.',
+		16  =>  'Serious error. Robocopy did not copy any files. '.
+				'Either a usage error or an error due to insufficient access privileges '.
+				'on the source or destination directories.'
+	);
+	my $exitstr = '';
+	foreach my $code(sort {$a<=>$b} keys %exit_code){
+		if ( $exit == 0){
+			$exitstr .= $exit_code{0};
+			last;
+		}
+		$exitstr .= ' '.$exit_code{$code} if ($exit & $code);
+	}
+	return $exitstr;	
+}
 sub _validrange {
 	my $range = shift;
 	$range =~ s/\s//g;
@@ -353,9 +469,7 @@ sub _waitdrive{
 			"(press ENTER when $drive is connected or CTRL-C to terminate the program)\n";
 	my $input = <STDIN>;
 	$self->run();
-
 }
-
 sub _load_conf{ 
 	my $file = shift;
 	return [] unless -e -r -f $file;
@@ -390,14 +504,8 @@ sub _load_conf{
 		carp "unexpected elements in job $count  retrieved from $file" if keys %$job > @check;
 		$count++;
 	}
-	
-	#print scalar @{$data}," jobs retrieved from file\n";
 	return $data;
-
-#[{'not yet implemented'=>'from _load_conf'}] 
-
 }
-
 sub _write_conf{
 	my $self = shift;
 	my $json = JSON::PP->new->utf8->pretty->canonical;
@@ -409,7 +517,6 @@ sub _write_conf{
 	print $fh $json->encode( $self->{ jobs } );
 	close $fh or croak "unable to close configuration file [$self->{ conf }]";	
 }
-
 sub _get_cron{
 	my $crontab = shift;
 	my $cron;
@@ -490,7 +597,6 @@ sub _verify_args{
 	$arg{src} //= $arg{source};
 	croak "backup need a source!" unless $arg{src};
 	$arg{dst} //= $arg{destination} // '.';
-	############$arg{dst} = File::Spec->catdir( $arg{dst}, $arg{name} );
 	map { $_ =  File::Spec->file_name_is_absolute( $_ ) ?
 				$_ 										:
 				File::Spec->rel2abs( $_ ) ;
@@ -893,6 +999,53 @@ C<fields> parameter.
             name = job2
             src = D:\ulisseDUE\Win32-Backup-Robocopy-job-mode
             next_time_descr = Mon Apr  1 00:03:00 2019
+
+
+			
+			
+=head1 RESTORE
+
+=head2 restore
+
+The module provides a method to restore from a backup to a given destination. It is just
+a copy of all files and directories found in a given source directory, to a  given destination (that will be created if it does not already exists).
+
+This method just needs two parameters: C<from> and C<to> like in:
+
+    $bkp->restore(  
+                    from => 'X:/external/scripts_bkp' , 
+                    to 	 => 'D:/local/scripts' 
+    );
+
+	
+=head2 history restore
+
+When each folder contained in the given source to restore has a name as given by a C<history> backup, eg. like C<2022-04-12T09-02-36> and the folder used as source to restore contains only  folders and no other object at all, then, if these conditions are met, each folder will be used as source starting from the older one to the newer one.
+
+This behaviour permits a restore to a point in time using the C<upto> parameter in the C<restore> call. Let's say you have backed up some folder with an C<history> backup and now 
+tou have the following folders:
+
+	2019-01-04T20-29-10
+	2019-01-05T20-29-10
+	2019-01-06T20-29-10
+	2019-01-07T20-29-10
+	
+all contained in C<X:\external\photos> and you discover that the day 7 of January at 14:00 all your pictures got corrupted ( so the last backup contains a lot of invalid files ) you can restore only pictures up to the January 6 using:
+
+    $bkp->restore(  
+                    from => 'X:\external\photos', 
+                    to => 'C:\PICS\restore_up_to_january_6',
+                    upto => '2019-01-06T20-29-10',					
+    );
+	
+and you'll have restored only the photos backed up in the firsts three folder and not in the fourth one.
+
+=head2 returned value 
+
+The return value of a C<restore> call will be an anonymous array with an element for each operation done by the method. If it was a simple restore the array will hold just one element but
+if it was a history restore each operation (using a different folder as surce) will push an 
+element in the array. These array elements are anonymoous hashes with four keys:  C<stdout>, C<stderr>, C<exit> and C<exitstring> of each operation respectively.
+
 
 
 =head1 CONFIGURATION FILE

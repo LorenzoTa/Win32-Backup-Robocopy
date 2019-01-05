@@ -15,7 +15,7 @@ use t::bkpscenario;
 #######################################################################
 my ($tbasedir,$tsrc,$tdst) = bkpscenario::create_dirs();
 BAIL_OUT( "unable to create temporary folders!" ) unless $tbasedir;
-note("created bakup scenario in $tbasedir");
+note("created backup scenario in $tbasedir");
 
 my $file1 = 'Foscolo_A_Zacinto.txt';
 my $tfh1 = bkpscenario::open_file($tsrc,$file1);
@@ -65,4 +65,4 @@ ok( ! -e File::Spec->catfile($tdst,'test4',$file1),'file does not exists in  dir
 
 # remove the backup scenario
 bkpscenario::clean_all($tbasedir);
-note("removed bakup scenario in $tbasedir");
+note("removed backup scenario in $tbasedir");
