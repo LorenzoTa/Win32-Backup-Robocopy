@@ -74,6 +74,8 @@ sub new {
 sub run	{
 	my $self = shift;
 	my %opt = _default_run_params(@_);
+	# explicit verbose passed override the $bkp object property
+	local $self->{verbose} = $opt{verbose} if exists $opt{verbose};
 	# leave if we are running under JOB mode
 	if ( $self->{jobs} and ref $self->{jobs} eq 'ARRAY' ){
 		croak "No direct run invocation permitted while running in JOB mode!\n".
@@ -92,6 +94,11 @@ sub run	{
 	if ( $self->{history} ){
 		$date_folder = DateTime::Tiny->now()=~s/:/-/gr;
 		$dst =  File::Spec->catdir( $dst, $date_folder );		
+	}
+	# some verbose output
+	if ( $self->{verbose} ){
+		print "backup SRC: [$src]\n",
+				"backup DST: [$dst]\n"
 	}
 	# check the directories structure
 	make_path( $dst, { 
@@ -131,9 +138,19 @@ sub run	{
 						( $opt{archiveremove} ? '/M' : undef ),
 						( $opt{noprogress} ? '/NP' : undef ),
 						# extra parameters for robocopy
-						@extra
-						;
+						@extra;
+	# verbosity
+	if ( $self->{verbose} ){
+		print "executing [robocopy.exe ",(join ' ', @cmdargs),"]\n";
+	}	
 	my ($stdout, $stderr, $exit, $exitstr) = _wrap_robocpy( @cmdargs );
+	# verbosity
+	if ( $self->{verbose} ){
+		print "STDOUT: $stdout\n" if $self->{verbose} > 1;
+		print "STDERR: $stderr\n" if $self->{verbose} > 1;
+		print "EXIT  : $exit\n"   if $self->{verbose} > 1;
+		print "robocopy.exe exit description: $exitstr\n";		
+	}
 	return $stdout, $stderr, $exit, $exitstr, $date_folder;
 }
 
