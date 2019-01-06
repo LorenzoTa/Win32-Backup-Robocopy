@@ -23,10 +23,10 @@ our $VERSION = 5;
 
 # perl -I ./lib -MWin32::Backup::Robocopy -e "$bkp=Win32::Backup::Robocopy->new(name=>'test',src=>'.',dst=>'H:/test',waitdrive=>1); $bkp->run()"
 
-# perl -nlE "BEGIN{@ARGV=glob shift}last if /__DATA__/;$c++ unless /^$|^\s*#/}{say $c" "./lib/Win32/Backup/Robocopy.pm"
-# 321
+# perl -nlE "BEGIN{@ARGV=glob shift}last if /^__DATA__/;$c++ unless /^$|^\s*#/}{say $c" "./lib/Win32/Backup/*.pm"
+# 477
 
-# perl -nlE "BEGIN{@ARGV=glob shift}last if /__DATA__/;$c++ unless /^$|^\s*#/}{say $c" "./t/*.t"
+# perl -nlE "BEGIN{@ARGV=glob shift}last if /^__DATA__/;$c++ unless /^$|^\s*#/}{say $c" "./t/*.t"
 # 376
 
 # perl -I ./lib -MWin32::Backup::Robocopy -MData::Dump -e "$bkp=Win32::Backup::Robocopy->new(conf=>'bkpconfig.json'); $bkp->job(src=>'.',dst=>'x:/dest',name=>'first',cron=>'* 4 * * *'); $bkp->runjobs"
@@ -133,12 +133,7 @@ sub run	{
 						# extra parameters for robocopy
 						@extra
 						;
-	my ($stdout, $stderr, $exit) = capture {
-	system( 'ROBOCOPY', @cmdargs );
-	};
-	# !!
-	$exit = $exit>>8;
-	my $exitstr = _robocopy_exitstring($exit);
+	my ($stdout, $stderr, $exit, $exitstr) = _wrap_robocpy( @cmdargs );
 	return $stdout, $stderr, $exit, $exitstr, $date_folder;
 }
 
@@ -298,6 +293,12 @@ sub restore{
 	if ( $arg{upto} ){
 			$arg{upto} = _validate_upto( $arg{upto} );
 	}
+	# check the extraparam parameter
+	my @extra =  ref $arg{extraparam} eq 'ARRAY' 	?
+					@{ $arg{extraparam} }			:
+					split /\s+/, $arg{extraparam} // ''	;
+	my @robo_params = ( '*.*', '/E', '/DCOPY:T', '/SEC', '/NP', @extra );
+	# build parameters to ROBOCOPY using some default and extraparam
 	# check if it is a restore from a history backup
 	opendir my $dirh, $arg{from} or croak "unable to open dir [$arg{from}] to read";
 	my $is_history = 1;
@@ -342,13 +343,8 @@ sub restore{
 			}
 			$src = File::Spec->catdir($arg{from},$src);
 			print "restoring from [$src]\n" if $arg{verbose};
-			my ($stdout, $stderr, $exit) = capture {
-				system( 'ROBOCOPY', $src, 
-						$arg{to}, '*.*', '/E', '/DCOPY:T', '/SEC' );
-			};
-			# !!
-			$exit = $exit>>8;
-			my $exitstr = _robocopy_exitstring($exit);
+			my @cmdargs = ( $src, $arg{to}, @robo_params );
+			my ($stdout, $stderr, $exit, $exitstr) = _wrap_robocpy( @cmdargs );
 			push @$ret, {
 						stdout => $stdout, stderr => $stderr,
 						exit => $exit, exitstr => $exitstr
@@ -357,12 +353,8 @@ sub restore{
 	}
 	# NORMAL (non history) restore
 	else{
-		my ($stdout, $stderr, $exit) = capture {
-			system( 'ROBOCOPY', $arg{from}, $arg{to}, '*.*', '/E', '/DCOPY:T', '/SEC' );
-		};
-		# !!
-		$exit = $exit>>8;
-		my $exitstr = _robocopy_exitstring($exit);
+		my @cmdargs = ( $arg{from}, $arg{to}, @robo_params );
+		my ($stdout, $stderr, $exit, $exitstr) = _wrap_robocpy( @cmdargs );
 		push @$ret, {
 						stdout => $stdout, stderr => $stderr,
 						exit => $exit, exitstr => $exitstr
@@ -373,6 +365,18 @@ sub restore{
 ##################################################################
 # not public subs
 ##################################################################
+
+sub _wrap_robocpy{
+	my @cmdargs = @_;
+	my ($stdout, $stderr, $exit) = capture {
+		system( 'ROBOCOPY.EXE', @cmdargs );
+	};
+	# !!
+	$exit = $exit>>8;
+	my $exitstr = _robocopy_exitstring($exit);
+	return $stdout, $stderr, $exit, $exitstr;	
+}
+
 sub _validate_upto{
 	my $time = shift;
 	unless (  	
@@ -1039,6 +1043,8 @@ all contained in C<X:\external\photos> and you discover that the day 7 of Januar
     );
 	
 and you'll have restored only the photos backed up in the firsts three folder and not in the fourth one.
+
+The C<restore> method will execute a C<robocopy.exe> call with defaut arguments C<'*.*', '/E', '/DCOPY:T', '/SEC', '/NP'> but you can pass other ones using the C<extraparam> parameter being it a string or an array reference with a list of valid C<robocopy.exe> parameters.
 
 =head2 returned value 
 
