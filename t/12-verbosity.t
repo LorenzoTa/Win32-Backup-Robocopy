@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use Test::More;
 use Test::Exception;
+use Capture::Tiny qw(capture);
 use Win32::Backup::Robocopy;
 
 use lib '.';
@@ -91,7 +92,6 @@ my @ordered_dirs = sort grep {!/^\./} readdir($lastdir);
 my $lastfilepath = File::Spec->catfile( $completedest, $ordered_dirs[-1], $file1);
 
 
-
 # check if last file is complete..
 open my $lastfile, '<', $lastfilepath or 
 					BAIL_OUT ("unable to open file to check it ($file1 in $bkp->{dst} $ordered_dirs[-1])!");
@@ -100,13 +100,33 @@ while(<$lastfile>){ $last_line = $_}
 close $lastfile or BAIL_OUT("unable to close file!");
 ok( $last_line eq "  il fato illacrimata sepoltura.\n","file $file1 has the expected content in folder $ordered_dirs[-1]");
 
-# some restore
-note("setting restore verbosity to 1");
-$bkp->restore(from=> $completedest, to => $tbasedir, verbose => 1);
-note("setting restore verbosity to 2");
-$bkp->restore(from=> $completedest, to => $tbasedir, upto=> $ordered_dirs[-2], verbose => 2);
-note("setting restore verbosity to 0");
-$bkp->restore(from=> $completedest, to => $tbasedir, upto=> $ordered_dirs[-2], verbose => 0);
+# some restore:
+# verbosity 1
+my ($out, $err, @res) = capture {
+		$bkp->restore(from=> $completedest, to => $tbasedir, 
+		verbose => 1);
+};
+ok (7 == (split "\n", $out), "7 lines expected with verbosity = 1");
+# verbosity 2
+($out, $err, @res) = capture {
+		$bkp->restore(from=> $completedest, to => $tbasedir, upto=> $ordered_dirs[-2], 
+		verbose => 2);
+};
+ok ((split "\n", $out) > 30 , "30+ lines expected with verbosity = 2");
+# verbosity 0
+($out, $err, @res) = capture {
+		$bkp->restore(from=> $completedest, to => $tbasedir,
+		verbose => 0);
+};
+ok (0 == (split "\n", $out), "0 lines expected with verbosity = 0");
+
+# check if last file is complete..
+open  $lastfile, '<', File::Spec->catfile($tbasedir, $file1) or 
+					BAIL_OUT ("unable to open file to check it ($file1 in $tbasedir)!");
+$last_line;
+while(<$lastfile>){ $last_line = $_}
+close $lastfile or BAIL_OUT("unable to close file!");
+ok( $last_line eq "  il fato illacrimata sepoltura.\n","file $file1 has the expected content in folder $tbasedir");
 
 
 done_testing();
