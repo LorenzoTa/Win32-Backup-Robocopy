@@ -76,6 +76,31 @@ ok ((split "\n", $out) > 30 , "30+ lines expected with verbosity = 2");
 };
 ok (0 == (split "\n", $out), "0 lines expected with verbosity = 0");
 
+# a new backup with verbosity 2
+$bkp = Win32::Backup::Robocopy->new(
+	name => 'test2',
+	source	 => $tsrc,
+	dst => $tdst,
+	history => 1,
+	verbose => 2,
+);
+
+# verbosity non specified inherit from backup
+($out, $err, @res) = capture {
+		$bkp->restore(from=> $completedest, to => $tbasedir,
+		);
+};
+ok (30 < (split "\n", $out), "verbosity propagates correctly from backup to restore");
+
+# and overridden succesfully 
+($out, $err, @res) = capture {
+		$bkp->restore(from=> $completedest, to => $tbasedir,
+		verbose => 0,
+		);
+};
+ok ( 0 == (split "\n", $out), "verbosity overridden succesfully by restore");
+
+
 # check if last file is complete..
 open  my $lastfile, '<', File::Spec->catfile($tbasedir, $file1) or 
 					BAIL_OUT ("unable to open file to check it ($file1 in $tbasedir)!");
@@ -84,8 +109,9 @@ while(<$lastfile>){ $last_line = $_}
 close $lastfile or BAIL_OUT("unable to close file!");
 ok( $last_line eq "  il fato illacrimata sepoltura.\n","file $file1 has the expected content in folder $tbasedir");
 
-
-done_testing();
 # remove the backup scenario
 bkpscenario::clean_all($tbasedir);
 note("removed backup scenario in $tbasedir");
+
+
+done_testing();
