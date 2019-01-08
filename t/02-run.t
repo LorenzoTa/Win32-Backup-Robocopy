@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use Test::More;
 use Test::Exception;
+use Capture::Tiny qw(capture);
 use Win32::File qw(:DEFAULT GetAttributes SetAttributes);
 use Win32::Backup::Robocopy;
 
@@ -18,7 +19,10 @@ my $nobkp = Win32::Backup::Robocopy->new(
 	src	 => '.',
 	dst => File::Spec->catdir ( Win32::GetNextAvailDrive(),'' )
 );
-dies_ok { $nobkp->run } 'run is expected to die with no existing destination drive';
+my ($out, $err, @res) = capture {
+		dies_ok { $nobkp->run } 'run is expected to die with no existing destination drive';
+};
+
 
 # run croaks if invalid name was given for destination
 $nobkp = Win32::Backup::Robocopy->new( 
@@ -27,7 +31,10 @@ $nobkp = Win32::Backup::Robocopy->new(
 	src	 => '.',
 	dst => '.', 
 );
-dies_ok { $nobkp->run } 'run is expected to die with invalid folder name';
+($out, $err, @res) = capture {
+		dies_ok { $nobkp->run } 'run is expected to die with invalid folder name';
+};
+
 
 #######################################################################
 # a real minimal bkp scenario

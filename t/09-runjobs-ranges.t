@@ -53,15 +53,14 @@ ok($lines[1] eq 'executing job [test3]','right job executed');
 ($stdout, $stderr, @result) = capture { $bkp->runjobs(0,2..3) };
 
 @lines = split '\n',$stdout;
-
 ok($lines[0] eq 'considering job [test0]','considered [test0]');
 ok($lines[1] eq 'executing job [test0]','executed [test0]');
-ok($lines[2] =~ /^mkdir.*test0$/,'mkdir for test0');
-ok($lines[3] eq 'considering job [test2]','considered [test2]');
-ok($lines[4] eq 'executing job [test2]','executed [test2]');
-ok($lines[5] =~ /^mkdir.*test2$/,'mkdir for test2');
-ok($lines[6] eq 'considering job [test3]','considered [test3]');
-ok($lines[7] =~ /^is not time to execute \[test3\].*00:00:00/,'not time for [test3]');
+ok($lines[4] =~ /^mkdir.*test0$/,'mkdir for test0');
+ok($lines[7] eq 'considering job [test2]','considered [test2]');
+ok($lines[8] eq 'executing job [test2]','executed [test2]');
+ok($lines[11] =~ /^mkdir.*test2$/,'mkdir for test2');
+ok($lines[14] eq 'considering job [test3]','considered [test3]');
+ok($lines[15] =~ /^is not time to execute \[test3\].*00:00:00/,'not time for [test3]');
 
 # run all jobs just to trigger them
 ($stdout, $stderr, @result) = capture { $bkp->runjobs() };

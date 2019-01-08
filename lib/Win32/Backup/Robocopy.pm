@@ -74,6 +74,8 @@ sub new {
 sub run	{
 	my $self = shift;
 	my %opt = _default_run_params(@_);
+	# explicit verbose passed override the $bkp object property
+	local $self->{verbose} = $opt{verbose} if exists $opt{verbose};
 	# leave if we are running under JOB mode
 	if ( $self->{jobs} and ref $self->{jobs} eq 'ARRAY' ){
 		croak "No direct run invocation permitted while running in JOB mode!\n".
@@ -92,6 +94,11 @@ sub run	{
 	if ( $self->{history} ){
 		$date_folder = DateTime::Tiny->now()=~s/:/-/gr;
 		$dst =  File::Spec->catdir( $dst, $date_folder );		
+	}
+	# some verbose output
+	if ( $self->{verbose} ){
+		print "backup SRC: [$src]\n",
+				"backup DST: [$dst]\n"
 	}
 	# check the directories structure
 	make_path( $dst, { 
@@ -131,9 +138,19 @@ sub run	{
 						( $opt{archiveremove} ? '/M' : undef ),
 						( $opt{noprogress} ? '/NP' : undef ),
 						# extra parameters for robocopy
-						@extra
-						;
+						@extra;
+	# verbosity
+	if ( $self->{verbose} ){
+		print "executing [robocopy.exe ",(join ' ', @cmdargs),"]\n";
+	}	
 	my ($stdout, $stderr, $exit, $exitstr) = _wrap_robocpy( @cmdargs );
+	# verbosity
+	if ( $self->{verbose} ){
+		print "STDOUT: $stdout\n" if $self->{verbose} > 1;
+		print "STDERR: $stderr\n" if $self->{verbose} > 1;
+		print "EXIT  : $exit\n"   if $self->{verbose} > 1;
+		print "robocopy.exe exit description: $exitstr\n";		
+	}
 	return $stdout, $stderr, $exit, $exitstr, $date_folder;
 }
 
@@ -286,9 +303,11 @@ sub restore{
 	# check and create destination directory
 	make_path( $arg{to} ) unless -d $arg{to};
 	# check verbose to be a number
-	if ( $arg{verbose} and $arg{verbose} =~ /\D/ ){
+	if ( exists $arg{verbose} and $arg{verbose} =~ /\D/ ){
 		croak "'verbose' parameter must be a number";
 	}
+	# explicit verbose passed override the $bkp object property
+	local $self->{verbose} = $arg{verbose} if exists $arg{verbose};
 	# check the upto parameter
 	if ( $arg{upto} ){
 			$arg{upto} = _validate_upto( $arg{upto} );
@@ -330,6 +349,7 @@ sub restore{
 	my $ret = [];
 	# HISTORY restore
 	if ( $is_history ){
+		print "retore type: HISTORY\n" if $self->{verbose};
 		foreach my $src (sort @time_dirs){
 			# check if directory name exceeds 'upto' param
 			if ( $arg{upto} ){
@@ -337,14 +357,25 @@ sub restore{
 				my $current = DateTime::Tiny->from_string( $sanitized_src )->DateTime->epoch;
 				if ( $current > $arg{upto} ){
 				print "[$src] and following folders skipped because newer than: ".
-							(scalar gmtime( $arg{upto} ))."\n" if $arg{verbose};
+							(scalar gmtime( $arg{upto} ))."\n" if $self->{verbose};
 					last;
 				}
 			}
 			$src = File::Spec->catdir($arg{from},$src);
 			print "restoring from [$src]\n" if $arg{verbose};
 			my @cmdargs = ( $src, $arg{to}, @robo_params );
+			# verbosity
+			if ( $self->{verbose} ){
+				print "executing [robocopy.exe ",(join ' ', @cmdargs),"]\n";
+			}
 			my ($stdout, $stderr, $exit, $exitstr) = _wrap_robocpy( @cmdargs );
+			# verbosity
+			if ( $self->{verbose} ){
+				print "STDOUT: $stdout\n" if $self->{verbose} > 1;
+				print "STDERR: $stderr\n" if $self->{verbose} > 1;
+				print "EXIT  : $exit\n"   if $self->{verbose} > 1;
+				print "robocopy.exe exit description: $exitstr\n";		
+			}
 			push @$ret, {
 						stdout => $stdout, stderr => $stderr,
 						exit => $exit, exitstr => $exitstr
