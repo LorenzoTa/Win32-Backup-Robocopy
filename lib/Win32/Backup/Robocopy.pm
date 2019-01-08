@@ -236,8 +236,9 @@ sub runjobs{
 				history 	=> $job->{history} // 0,
 				verbose 	=> $job->{verbose} // 0,
 				debug		=> $job->{debug} // 0,
+				waitdrive	=> $job->{waitdrive} // 0,
 				#writelog	=> $job->{writelog} // 1,
-			},ref $self;		
+			},ref $self;
 			
 			$bkp->run( 
 				archive => $job->{archive},
