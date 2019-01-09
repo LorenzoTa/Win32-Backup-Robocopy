@@ -220,7 +220,7 @@ sub runjobs{
 	my $range = ( @_ ? (join ',',@_) : undef) // join '..',0,$#{ $self->{ jobs }};
 	my @range = _validrange( $range );
 	foreach my $job( @{ $self->{ jobs } }[@range] ){
-		if ( $job->{ verbose } ){
+		if ( $self->{ verbose } or $job->{ verbose } ){
 			print "considering job [$job->{ name }]\n";
 		}
 		if ( time > $job->{ next_time } ){
@@ -236,8 +236,9 @@ sub runjobs{
 				history 	=> $job->{history} // 0,
 				verbose 	=> $job->{verbose} // 0,
 				debug		=> $job->{debug} // 0,
+				waitdrive	=> $job->{waitdrive} // 0,
 				#writelog	=> $job->{writelog} // 1,
-			},ref $self;		
+			},ref $self;
 			
 			$bkp->run( 
 				archive => $job->{archive},
@@ -256,7 +257,7 @@ sub runjobs{
 		}
 		# job not to be executed
 		else {
-			print "is not time to execute [$job->{ name }] (next time will be $job->{ next_time_descr })\n";
+			print "is not time to execute [$job->{ name }] (next time will be $job->{ next_time_descr })\n" if $self->{ verbose } or $job->{ verbose };
 		}
 	}	
 }
@@ -546,11 +547,12 @@ sub _write_conf{
 	my $json = JSON::PP->new->utf8->pretty->canonical;
 	$json->sort_by( \&_ordered_json );
 	if ( $self->{ verbose } and -e $self->{ conf } ){
-		carp "overwriting configuration file $self->{ conf }\n";
+		print "overwriting configuration file $self->{ conf }\n";
 	}
 	open my $fh, '>', $self->{ conf } or croak "unable to write configuration to [$self->{ conf }]";
 	print $fh $json->encode( $self->{ jobs } );
-	close $fh or croak "unable to close configuration file [$self->{ conf }]";	
+	close $fh or croak "unable to close configuration file [$self->{ conf }]";
+	print "wrote configuration file $self->{ conf }\n" if $self->{ verbose };
 }
 sub _get_cron{
 	my $crontab = shift;
