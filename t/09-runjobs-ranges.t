@@ -51,16 +51,15 @@ ok($lines[1] eq 'executing job [test3]','right job executed');
 # run only jobs 0,2,3
 # NB runjobs accepts both STRING and ARRAY
 ($stdout, $stderr, @result) = capture { $bkp->runjobs(0,2..3) };
-
 @lines = split '\n',$stdout;
 ok($lines[0] eq 'considering job [test0]','considered [test0]');
 ok($lines[1] eq 'executing job [test0]','executed [test0]');
 ok($lines[4] =~ /^mkdir.*test0$/,'mkdir for test0');
-ok($lines[7] eq 'considering job [test2]','considered [test2]');
-ok($lines[8] eq 'executing job [test2]','executed [test2]');
-ok($lines[11] =~ /^mkdir.*test2$/,'mkdir for test2');
-ok($lines[14] eq 'considering job [test3]','considered [test3]');
-ok($lines[15] =~ /^is not time to execute \[test3\].*00:00:00/,'not time for [test3]');
+ok($lines[9] eq 'considering job [test2]','considered [test2]');
+ok($lines[10] eq 'executing job [test2]','executed [test2]');
+ok($lines[13] =~ /^mkdir.*test2$/,'mkdir for test2');
+ok($lines[18] eq 'considering job [test3]','considered [test3]');
+ok($lines[19] =~ /^is not time to execute \[test3\].*00:00:00/,'not time for [test3]');
 
 # run all jobs just to trigger them
 ($stdout, $stderr, @result) = capture { $bkp->runjobs() };
