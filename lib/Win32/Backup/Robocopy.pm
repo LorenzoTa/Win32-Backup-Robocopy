@@ -547,11 +547,12 @@ sub _write_conf{
 	my $json = JSON::PP->new->utf8->pretty->canonical;
 	$json->sort_by( \&_ordered_json );
 	if ( $self->{ verbose } and -e $self->{ conf } ){
-		carp "overwriting configuration file $self->{ conf }\n";
+		print "overwriting configuration file $self->{ conf }\n";
 	}
 	open my $fh, '>', $self->{ conf } or croak "unable to write configuration to [$self->{ conf }]";
 	print $fh $json->encode( $self->{ jobs } );
-	close $fh or croak "unable to close configuration file [$self->{ conf }]";	
+	close $fh or croak "unable to close configuration file [$self->{ conf }]";
+	print "wrote configuration file $self->{ conf }\n" if $self->{ verbose };
 }
 sub _get_cron{
 	my $crontab = shift;
