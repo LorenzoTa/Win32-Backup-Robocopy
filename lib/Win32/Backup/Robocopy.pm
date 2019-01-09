@@ -220,7 +220,7 @@ sub runjobs{
 	my $range = ( @_ ? (join ',',@_) : undef) // join '..',0,$#{ $self->{ jobs }};
 	my @range = _validrange( $range );
 	foreach my $job( @{ $self->{ jobs } }[@range] ){
-		if ( $job->{ verbose } ){
+		if ( $self->{ verbose } or $job->{ verbose } ){
 			print "considering job [$job->{ name }]\n";
 		}
 		if ( time > $job->{ next_time } ){
@@ -257,7 +257,7 @@ sub runjobs{
 		}
 		# job not to be executed
 		else {
-			print "is not time to execute [$job->{ name }] (next time will be $job->{ next_time_descr })\n";
+			print "is not time to execute [$job->{ name }] (next time will be $job->{ next_time_descr })\n" if $self->{ verbose } or $job->{ verbose };
 		}
 	}	
 }

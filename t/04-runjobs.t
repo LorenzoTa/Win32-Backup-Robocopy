@@ -30,15 +30,15 @@ my $bkp = Win32::Backup::Robocopy->new( config => $conf );
 
 # add a job  with first_time_run=>1
 $bkp->job(  name => 'test3', src => $tsrc, dst => $tdst,
-			cron => '0 0 25 12 *', first_time_run => 1);
+			cron => '0 0 25 12 *', first_time_run => 1, verbose => 1);
 
 # this time it must return executing job [name]
 my ($stdout, $stderr, @result) = capture { $bkp->runjobs() };
-like( $stdout, qr/^executing job \[test3\]/, "right output of first_time_run (executing..)");
+like( (split "\n",$stdout)[1], qr/^executing job \[test3\]/, "right output of first_time_run (executing..)");
 
 # now it must says it's not time to run: first_time_run run only once!
 ($stdout, $stderr, @result) = capture { $bkp->runjobs() };
-like( $stdout, qr/^is not time to execute/, "right output of first_time_run (skipping..)");
+like( (split "\n",$stdout)[1], qr/^is not time to execute/, "right output of first_time_run (skipping..)");
 
 undef $bkp;
 $bkp = Win32::Backup::Robocopy->new( configuration => File::Spec->catfile($tbasedir,'my_config.json' ));
