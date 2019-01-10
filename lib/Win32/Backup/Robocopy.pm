@@ -1086,13 +1086,14 @@ and you'll have restored only the photos backed up in the firsts three folder an
 
 The C<restore> method will execute a C<robocopy.exe> call with defaut arguments C<'*.*', '/E', '/DCOPY:T', '/SEC', '/NP'> but you can pass other ones using the C<extraparam> parameter being it a string or an array reference with a list of valid C<robocopy.exe> parameters.
 
+Both history and normal restore can output more informations if C<verbose> is set in the main backup object or if it is passed in directly during the C<restore> method call.
+
 =head2 returned value 
 
 The return value of a C<restore> call will be an anonymous array with an element for each operation done by the method. If it was a simple restore the array will hold just one element but
 if it was a history restore each operation (using a different folder as surce) will push an 
 element in the array. These array elements are anonymoous hashes with four keys:  C<stdout>, C<stderr>, C<exit> and C<exitstring> of each operation respectively.
 
-Both history and normal restore can output more informations if C<verbose> is set in the main backup object or if it is passed in directly during the C<restore> method call.
 
 =head1 CONFIGURATION FILE
 
