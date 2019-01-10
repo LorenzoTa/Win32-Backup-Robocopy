@@ -166,6 +166,8 @@ sub job {
 	my %opt = _verify_args(@_);
 	%opt = _default_new_params( %opt );	
 	%opt = _default_run_params( %opt );
+	# explicit verbose passed override the $bkp object property
+	local $self->{verbose} = $opt{verbose} if exists $opt{verbose};
 	# intialize first_time_run to 0
 	$opt{ first_time_run } //= 0;
 	# delete entries that must only be set internally
@@ -203,6 +205,10 @@ sub job {
 	$json->canonical(1);
 	$json->sort_by( \&_ordered_json );
 	push @{ $self->{jobs} }, $jobconf;
+	# verbosity
+	if ( $self->{verbose} > 2 ){
+		print $json->encode( $jobconf );
+	}
 	# clean the main object of other (now unwanted) properties
 	$self->_write_conf;
 	map{ delete $self->{$_} }qw( name src dst history debug verbose );
