@@ -93,13 +93,13 @@ $bkp = Win32::Backup::Robocopy->new(
 };
 ok (30 < (split "\n", $out), "verbosity propagates correctly from backup to restore");
 
-# and overridden succesfully 
+# and overwritten succesfully 
 ($out, $err, @res) = capture {
 		$bkp->restore(from=> $completedest, to => $tbasedir,
 		verbose => 0,
 		);
 };
-ok ( 0 == (split "\n", $out), "verbosity overridden succesfully by restore");
+ok ( 0 == (split "\n", $out), "verbosity overwritten succesfully by restore");
 
 $bkp = Win32::Backup::Robocopy->new( configuration => File::Spec->catfile($tbasedir,'my_config.json'), verbose => 0 );
 # check verbosity of job method if inherited
@@ -111,7 +111,7 @@ $bkp = Win32::Backup::Robocopy->new( configuration => File::Spec->catfile($tbase
 };
 ok ( 0 == (split "\n", $out), "verbosity inherited ok when adding job");
 
-# check verbosity overridden by job method
+# check verbosity overwritten by job method
 ($out, $err, @res) = capture {
 		$bkp->job( name=>'test3', src=>$tsrc,
 			cron=>'0 0 25 12 *', history=>1,
