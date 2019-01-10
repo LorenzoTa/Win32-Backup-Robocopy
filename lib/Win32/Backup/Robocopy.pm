@@ -356,7 +356,7 @@ sub restore{
 			}
 			my ($stdout, $stderr, $exit, $exitstr) = _wrap_robocpy( @cmdargs );
 			# verbosity
-			if ( $self->{verbose} ){
+			if ( $self->{verbose} > 1 ){
 				print "STDOUT: $stdout\n" if $self->{verbose} > 1;
 				print "STDERR: $stderr\n" if $self->{verbose} > 1;
 				print "EXIT  : $exit\n"   if $self->{verbose} > 1;
@@ -371,7 +371,18 @@ sub restore{
 	# NORMAL (non history) restore
 	else{
 		my @cmdargs = ( $arg{from}, $arg{to}, @robo_params );
+		# verbosity
+		if ( $self->{verbose} ){
+			print "executing [robocopy.exe ",(join ' ', @cmdargs),"]\n";
+		}
 		my ($stdout, $stderr, $exit, $exitstr) = _wrap_robocpy( @cmdargs );
+		# verbosity
+		if ( $self->{verbose} > 1 ){
+			print "STDOUT: $stdout\n" if $self->{verbose} > 1;
+			print "STDERR: $stderr\n" if $self->{verbose} > 1;
+			print "EXIT  : $exit\n"   if $self->{verbose} > 1;
+			print "robocopy.exe exit description: $exitstr\n";		
+		}
 		push @$ret, {
 						stdout => $stdout, stderr => $stderr,
 						exit => $exit, exitstr => $exitstr
@@ -854,9 +865,6 @@ C<waitdrive> defaults to 0 stopping the program if destination drive does not ex
 
 C<verbose> defaults to 0 governs the output of the program
 
-=item 
-
-C<debug> defaults to 0 dumping objects and configuration if true
 
 =back
 
@@ -899,6 +907,10 @@ C<noprogress> defaults to 1 and will set the C</NP> ( no progress - do not displ
 =item 
 
 C<extraparam> defaults to undef and can be used to pass any valid option to robocopy (see below)
+
+=item 
+
+C<verbose> defaults to what was defined in the construction of the backup obkect. Can be explicitally set during C<run> method call.
 
 =back
 
@@ -969,7 +981,7 @@ soon using the C<job> method described below.
 =head2 job
 
 This method will push job in the queue. It accepts all parameters of the C<new> and the C<run> methods described in RUN mode above.
-Infact a job, when run, will instantiate a new backup oject and will run via the C<run> method.
+Infact a job, when run, will instantiate a new backup object and will run via the C<run> method.
 
 In addition it must be feed with a valid crontab like string via the C<cron> parameter with a value something 
 like, for example, C<'15 14 1 * *'> to setup the schedule for this job to the first day of the month at 14:15
@@ -978,6 +990,8 @@ You can specify the optional parameter C<first_time_run =E<gt> 1> to have the jo
 the first time the job will run following the schedule given by the C<cron> parameter.
 
 Everytime a job is added the configuration file will be updated accordingly.
+
+If the C<verbose> option is passed in during the C<job> call (or if it is inherited by the main backup object) informations are displayed. With C<verbose> set to C<2> each job added is dumped and the resulting configuration will be also printed. 
 
 
 =head2 runjobs
@@ -1078,7 +1092,7 @@ The return value of a C<restore> call will be an anonymous array with an element
 if it was a history restore each operation (using a different folder as surce) will push an 
 element in the array. These array elements are anonymoous hashes with four keys:  C<stdout>, C<stderr>, C<exit> and C<exitstring> of each operation respectively.
 
-
+Both history and normal restore can output more informations if C<verbose> is set in the main backup object or if it is passed in directly during the C<restore> method call.
 
 =head1 CONFIGURATION FILE
 
