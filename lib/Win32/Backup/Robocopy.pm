@@ -10,30 +10,7 @@ use JSON::PP; # only this support sort_by(custom_func)
 use Capture::Tiny qw(capture);
 use DateTime::Tiny;
 use Algorithm::Cron;
-our $VERSION = 5;
-
-# perl -I ./lib ./t/01-new.t & perl -I ./lib ./t/02-run.t &  perl -I ./lib ./t/03-job.t & perl -I ./lib ./t/04-runjobs.t & perl -I ./lib  ./t/05-writeconf.t
-# AKA
-# perl -e "system qq( $^X -I ./lib $_) for glob './t/[0-9]*.t'"
-# AKA
-# prove -I ./lib -v
-# aka
-# prove -l -v
-#
-
-# perl -I ./lib -MWin32::Backup::Robocopy -e "$bkp=Win32::Backup::Robocopy->new(name=>'test',src=>'.',dst=>'H:/test',waitdrive=>1); $bkp->run()"
-
-# perl -nlE "BEGIN{@ARGV=glob shift}last if /^__DATA__/;$c++ unless /^$|^\s*#/}{say $c" "./lib/Win32/Backup/*.pm"
-# 477
-
-# perl -nlE "BEGIN{@ARGV=glob shift}last if /^__DATA__/;$c++ unless /^$|^\s*#/}{say $c" "./t/*.t"
-# 376
-
-# perl -I ./lib -MWin32::Backup::Robocopy -MData::Dump -e "$bkp=Win32::Backup::Robocopy->new(conf=>'bkpconfig.json'); $bkp->job(src=>'.',dst=>'x:/dest',name=>'first',cron=>'* 4 * * *'); $bkp->runjobs"
-
-# perl -MModule::CPANTS::Analyse -MData::Dump -e "$an = Module::CPANTS::Analyse->new({dist=>$ARGV[0]}); $an->run; dd $an->d"
-
-# cpants_lint.pl Foo-Bar-1.23.tar.gz
+our $VERSION = 6;
 
 sub new {
 	my $class = shift;
