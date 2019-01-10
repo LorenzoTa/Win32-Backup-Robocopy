@@ -76,6 +76,7 @@ ok ((split "\n", $out) > 30 , "30+ lines expected with verbosity = 2");
 };
 ok (0 == (split "\n", $out), "0 lines expected with verbosity = 0");
 
+
 # a new backup with verbosity 2
 $bkp = Win32::Backup::Robocopy->new(
 	name => 'test2',
@@ -99,6 +100,25 @@ ok (30 < (split "\n", $out), "verbosity propagates correctly from backup to rest
 		);
 };
 ok ( 0 == (split "\n", $out), "verbosity overridden succesfully by restore");
+
+$bkp = Win32::Backup::Robocopy->new( configuration => File::Spec->catfile($tbasedir,'my_config.json'), verbose => 0 );
+# check verbosity of job method if inherited
+($out, $err, @res) = capture {
+		$bkp->job( name=>'test3', src=>$tsrc,
+			cron=>'0 0 25 12 *', history=>1,
+			first_time_run=>1,
+			);
+};
+ok ( 0 == (split "\n", $out), "verbosity inherited ok when adding job");
+
+# check verbosity overridden by job method
+($out, $err, @res) = capture {
+		$bkp->job( name=>'test3', src=>$tsrc,
+			cron=>'0 0 25 12 *', history=>1,
+			first_time_run=>1,
+			verbose => 3);
+};
+ok ( 34 < (split "\n", $out), "verbosity overidden ok when adding job");
 
 
 # check if last file is complete..
