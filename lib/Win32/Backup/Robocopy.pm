@@ -51,7 +51,7 @@ sub new {
 sub run	{
 	my $self = shift;
 	my %opt = _default_run_params(@_);
-	# explicit verbose passed override the $bkp object property
+	# explicit verbose passed overwrite the $bkp object property
 	local $self->{verbose} = $opt{verbose} if exists $opt{verbose};
 	# leave if we are running under JOB mode
 	if ( $self->{jobs} and ref $self->{jobs} eq 'ARRAY' ){
@@ -143,7 +143,7 @@ sub job {
 	my %opt = _verify_args(@_);
 	%opt = _default_new_params( %opt );	
 	%opt = _default_run_params( %opt );
-	# explicit verbose passed override the $bkp object property
+	# explicit verbose passed overwrite the $bkp object property
 	local $self->{verbose} = $opt{verbose} if exists $opt{verbose};
 	# intialize first_time_run to 0
 	$opt{ first_time_run } //= 0;
@@ -292,7 +292,7 @@ sub restore{
 	if ( exists $arg{verbose} and $arg{verbose} =~ /\D/ ){
 		croak "'verbose' parameter must be a number";
 	}
-	# explicit verbose passed override the $bkp object property
+	# explicit verbose passed overwrite the $bkp object property
 	local $self->{verbose} = $arg{verbose} if exists $arg{verbose};
 	# check the upto parameter
 	if ( $arg{upto} ){
