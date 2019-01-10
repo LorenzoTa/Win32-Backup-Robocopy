@@ -207,6 +207,7 @@ sub job {
 	push @{ $self->{jobs} }, $jobconf;
 	# verbosity
 	if ( $self->{verbose} > 2 ){
+		print "added the following job:\n";
 		print $json->encode( $jobconf );
 	}
 	# clean the main object of other (now unwanted) properties
@@ -553,12 +554,20 @@ sub _write_conf{
 	my $self = shift;
 	my $json = JSON::PP->new->utf8->pretty->canonical;
 	$json->sort_by( \&_ordered_json );
+	# verbosity
 	if ( $self->{ verbose } and -e $self->{ conf } ){
 		print "overwriting configuration file $self->{ conf }\n";
 	}
-	open my $fh, '>', $self->{ conf } or croak "unable to write configuration to [$self->{ conf }]";
+	open my $fh, '>', $self->{ conf } 
+			or croak "unable to write configuration to [$self->{ conf }]";
 	print $fh $json->encode( $self->{ jobs } );
 	close $fh or croak "unable to close configuration file [$self->{ conf }]";
+	# verbosity
+	if ( $self->{verbose} > 2 ){
+		print "resulting configuration:\n";
+		print $json->encode(  $self->{ jobs } );
+	}
+	# verbosity
 	print "wrote configuration file $self->{ conf }\n" if $self->{ verbose };
 }
 sub _get_cron{
