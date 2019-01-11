@@ -1138,6 +1138,73 @@ Note that C<next_time_descr> is just a label and does not affect the effective r
 
 =head1 EXAMPLES
 
+=head2 a simple case
+
+You can use an on the fly backup, for example, if you load a configurtion file and you modify it but you are not sure the whole process will be successful:
+
+    use strict;
+    use warnings;
+    use Win32::Backup::Robocopy;
+    
+    # the following will backup into c:\path\to\conf\conf_bkp
+    # ie the destination plus the name of the backup
+    my $bkp = Win32::Backup::Robocopy->new(
+            name        => 'conf_bkp',       
+            source      => 'c:\path\to\conf',
+            destination => 'c:\path\to\conf',
+    );
+
+    my( $stdout, $stderr, $exit, $exitstr ) = $bkp->run();
+        
+    if ( $exit < 8 ){
+        print "backup of configuration OK: $exitstr\n";
+    }
+
+    # something goes wrong: need to restore the original configuration
+
+    print "starting restore:\n";
+	
+    $bkp->restore(  
+            from => 'c:\path\to\conf\conf_bkp',  # the name of backup appended
+            to => 'c:\path\to\conf',             # to the backup destination
+            verbose => 2,
+    );
+
+In the above example we pass to restore C<verbose> with the value of C<2> to have printed out many details of the restore operation.	
+
+=head2 maintain more copies
+
+If you instead have a program running monthly, which modify a configuration file you can use the C<history> backup type to have more copies of the same file, one for each run of your monthly task. Now we use C<verbose> with value of C<1> inside the C<run> method call:
+
+    my $bkp = Win32::Backup::Robocopy->new(
+            name        => 'conf_bkp',       
+            source      => 'c:\path\to\conf',
+            destination => 'c:\path\to\conf',
+    );
+
+    my( $stdout, $stderr, $exit, $exitstr ) = $bkp->run( verbose => 1);
+        
+    if ( $exit < 8 ){
+        print "\nbackup of configuration OK\n";
+    }
+
+And this will add following lines to your program:
+
+    backup SRC: [c:\path\to\conf]
+    backup DST: [c:\path\to\conf\conf_bkp\2019-01-11T23-11-09]
+    mkdir c:\path\to\conf\conf_bkp\2019-01-11T23-11-09
+    executing [robocopy.exe c:\path\to\conf c:\path\to\conf\conf_bkp\2019-01-11T23-11-09 *.* /E /M /NP]
+    robocopy.exe exit description:  One or more files were copied successfully (that is, new files have arrived).
+    
+    backup of configuration OK
+
+If your program run monthly you'll have under C<conf_bkp> the following folders:
+
+    2019-01-11T23-11-09
+    2019-02-11T23-11-09
+    2019-03-11T23-11-09
+    2019-04-11T23-11-09
+    ..
 
 =head1 AUTHOR
 
