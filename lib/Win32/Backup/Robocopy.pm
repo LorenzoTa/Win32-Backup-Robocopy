@@ -981,36 +981,35 @@ soon using the C<job> method described below.
 =head2 job
 
 This method will push job in the queue. It accepts all parameters of the C<new> and the C<run> methods described in RUN mode above.
-Infact a job, when run, will instantiate a new backup object and will run via the C<run> method.
+Infact a job, when run, will instantiate a new backup object and will run it via the C<run> method.
 
-In addition it must be feed with a valid crontab like string via the C<cron> parameter with a value something 
-like, for example, C<'15 14 1 * *'> to setup the schedule for this job to the first day of the month at 14:15
+In addition it must be feed with a valid crontab like string via the C<cron> parameter with a value something like, for example, C<'15 14 1 * *'> to setup the schedule for this job to the first day of the month at 14:15
 
-You can specify the optional parameter C<first_time_run =E<gt> 1> to have the job scheduled as soon as possible. Then, after
-the first time the job will run following the schedule given by the C<cron> parameter.
+You can specify the optional parameter C<first_time_run =E<gt> 1> to have the job scheduled as soon as possible. Then, after the first time the job will run following the schedule given by the C<cron> parameter.
 
-Everytime a job is added the configuration file will be updated accordingly.
+Everytime a job is added, the configuration file will be updated accordingly.
 
 If the C<verbose> option is passed in during the C<job> call (or if it is inherited by the main backup object) informations are displayed. With C<verbose> set to C<2> each job added is dumped and the resulting configuration will be also printed. 
 
 
 =head2 runjobs
 
-This is the method to cycle the job queue to see if something has to be run. If so the job is run and the configuration file 
-is immediately updated with the correct time for the next execution.
+This is the method used to cycle the job queue to see if something has to be run. If so the job is run and the configuration file is immediately updated with the correct time for the next execution.
+
+The C<runjobs> method without any parameter will check all jobs in order to see if is time to run them. Optionally you can pass to it a range or a string representing a range to just process selected jobs:
+
+    $bkp->runjobs(0..1,5);
+    # or the same in the string form
+    $bkp->runjobs('0..1,5');
 
 
 =head2 listjobs
 
-With C<listjobs> you can list all jobs currently present in the configuration. In scalar context it just returns the number of jobs
-while il list context it returns the list of jobs.
+With C<listjobs> you can list all jobs currently present in the configuration. In scalar context it just returns the number of jobs while in list context it returns the list of jobs.
 
-In the list form you have the possibility to define the format used to represent the job with the C<format> parameter: if it is C<short>
-(and is the default value) each job will be represented on his own line. If by other hand  C<format =E<gt> 'long'> a more fancy multiline
-string will be crafted for each job.
+In the list form you have the possibility to define the format used to represent the job with the C<format> parameter: if it is C<short> (and is the default value) each job will be represented on his own line. By other hand  with C<format =E<gt> 'long'> a more fancy multiline string will be printed for each job.
 
-You can also specify a list of fields you want to show instead to have them all present, passing an array reference as value of the
-C<fields> parameter.
+You can also specify a list of fields you want to show instead to have them all present, passing an array reference as value of the C<fields> parameter.
 
     # sclar context
     my $jobcount = $bkp->listjobs;
@@ -1036,12 +1035,12 @@ C<fields> parameter.
     # output:
     JOB 0:
             name = job1
-            src = D:\ulisseDUE\Win32-Backup-Robocopy-job-mode
+            src = x:\path1
             next_time_descr = Tue Jan  1 00:05:00 2019
 
     JOB 1:
             name = job2
-            src = D:\ulisseDUE\Win32-Backup-Robocopy-job-mode
+            src = x:\path2
             next_time_descr = Mon Apr  1 00:03:00 2019
 
 
