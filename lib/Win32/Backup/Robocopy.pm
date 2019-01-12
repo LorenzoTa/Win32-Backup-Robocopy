@@ -803,36 +803,7 @@ for the destination folder is not present. Instead it opens a prompt asking the 
 to continue. The deafult value of C<waitdrive> is 0 ie. the program will die for the drive to be unavailable and
 creation of the destination folder impossible.
 
-Wait for the drive is useful in case of backups with destination, let's say, an USB drive:
-
-    my $bkp=Win32::Backup::Robocopy->new( 
-                                          name => 'test', 
-                                          src  => '.',
-                                          dst  => 'H:/test',     # drive is unplagged
-                                          waitdrive => 1         # force asking the user
-    ); 
-	
-    $bkp->run();
-	
-    # output:
-	
-    Backup of:     D:\my_current\dir
-    To:            H:\test\test
-    Waiting for drive H: to be available..
-    (press ENTER when H: is connected or CTRL-C to terminate the program)
-	
-    # I press enter before plugging the drive..
-	
-    Backup of:     D:\my_current\dir
-    To:            H:\test\test
-    Waiting for drive H: to be available..
-    (press ENTER when H: is connected or CTRL-C to terminate the program)
-
-    # I plug the external hard disk that receive the H: letter, then  I press ENTER
-    # the backup run OK
-
-With C<waitdrive> set to 0 instead the above program dies complaining about directory creation errors and C<destination drive H: is not accessible!>	
-
+Wait for the drive is useful in case of backups with destination, let's say, an USB drive: see L<EXMPLES> section.
 
 Overview of parameters accepted by C<new> and their defaults:
 
@@ -1083,6 +1054,24 @@ all contained in C<X:\external\photos> and you discover that the day 7 of Januar
 	
 and you'll have restored only the photos backed up in the firsts three folder and not in the fourth one.
 
+The C<upto> parameter can be: 1) a string as used to create folders by history backups, like in the above example C<2019-01-06T20-29-10> or 2) a string as created by L<DateTime::Tiny> C<as_string> method, ie C<2019-01-06T20:29:10> or 3) seconds since epoch like C<1546806550> or 4) a L<DateTime::Tiny> object or 5) a L<DateTime> object.
+
+
+Pay attention to what is said in the L<DateTime::Tiny> documentation about time zones and locale: in other words the conversion will be using C<gmtime> and not C<localtime> see the following example to demonstrate it:
+
+    use DateTime::Tiny;
+    my $epoch = DateTime::Tiny->from_string('2019-01-06T20:29:10')->DateTime->epoch; 
+    say 'epoch:     ',$epoch; 
+    say 'localtime: ',scalar localtime($epoch); 
+    say 'gmtime:    ',scalar gmtime($epoch);
+
+    # output
+
+    epoch:     1546806550
+    localtime: Sun Jan  6 21:29:10 2019
+    gmtime:    Sun Jan  6 20:29:10 2019
+
+
 The C<restore> method will execute a C<robocopy.exe> call with defaut arguments C<'*.*', '/E', '/DCOPY:T', '/SEC', '/NP'> but you can pass other ones using the C<extraparam> parameter being it a string or an array reference with a list of valid C<robocopy.exe> parameters.
 
 Both history and normal restore can output more informations if C<verbose> is set in the main backup object or if it is passed in directly during the C<restore> method call.
@@ -1090,7 +1079,7 @@ Both history and normal restore can output more informations if C<verbose> is se
 =head2 returned value 
 
 The return value of a C<restore> call will be an anonymous array with an element for each operation done by the method. If it was a simple restore the array will hold just one element but
-if it was a history restore each operation (using a different folder as surce) will push an 
+if it was a history restore each operation (using a different folder as source) will push an 
 element in the array. These array elements are anonymoous hashes with four keys:  C<stdout>, C<stderr>, C<exit> and C<exitstring> of each operation respectively.
 
 
@@ -1179,6 +1168,7 @@ If you instead have a program running monthly, which modify a configuration file
             name        => 'conf_bkp',       
             source      => 'c:\path\to\conf',
             destination => 'c:\path\to\conf',
+            history     => 1,
     );
 
     my( $stdout, $stderr, $exit, $exitstr ) = $bkp->run( verbose => 1);
@@ -1204,6 +1194,85 @@ If your program run monthly you'll have under C<conf_bkp> the following folders:
     2019-03-11T23-11-09
     2019-04-11T23-11-09
     ..
+
+	
+=head2 backup to external drive
+
+The C<waitdrive> option is useful when dealing with network shares or external drives. Infact the module will check if the drive is not present and will ask to connect before proceding:
+
+    my $bkp=Win32::Backup::Robocopy->new( 
+                                          name => 'test', 
+                                          src  => '.',
+                                          dst  => 'H:/test',     # drive H: is unplagged
+                                          waitdrive => 1         # force asking the user
+    ); 
+	
+    $bkp->run();
+	
+    # output:
+	
+    Backup of:     D:\my_current\dir
+    To:            H:\test\test
+    Waiting for drive H: to be available..
+    (press ENTER when H: is connected or CTRL-C to terminate the program)
+	
+    # I press enter before plugging the drive..
+	
+    Backup of:     D:\my_current\dir
+    To:            H:\test\test
+    Waiting for drive H: to be available..
+    (press ENTER when H: is connected or CTRL-C to terminate the program)
+
+    # I plug the external hard disk that receive the H: letter, then  I press ENTER
+    # the backup runs OK
+
+With C<waitdrive> set to 0 instead the above program dies complaining about directory creation errors and C<destination drive H: is not accessible!>	
+
+
+=head2 on demand backup in job mode
+
+The C<JOB> mode is mainly intended to implement scheduled backups using the C<cron> like mechanism. But, if it is the need, you can have backups run only on demand using a C<cron> string of five asterisks C<* * * * *> and using C<listjobs> and C<runjobs> to ask the user if they want to run the backup:
+
+
+    use Win32::Backup::Robocopy;
+    my $bkp = Win32::Backup::Robocopy->new( config => './my_bkp.json' );
+
+    # configuration made in previous runs is already populated
+    # so check if we need to specify jobs
+
+    if ( 0 == $bkp->listjobs ){
+        
+        print "adding jobs..\n";
+        
+        # a first job for 'documents'
+        $bkp->job(  name=>'documents', 
+            src=> 'c:\DOCS',
+            dst  => "x:\\",
+            cron =>'* * * * *',
+        );
+				
+        # a second job for 'scripts'
+        $bkp->job(  name=>'SCRIPTS', 
+            src=> 'c:\perl\scripts',
+            dst  => 'x:\\',
+            cron=>'* * * * *',
+        );
+    }
+    else{ print scalar $bkp->listjobs, " jobs retrieved from configuration file..\n"}
+    
+    # iterate over jobs
+    my $job_num = 0;
+    foreach my $descr( $bkp->listjobs( format=>'long', fields => [qw(name src dst)]) ){
+
+        print $descr;
+        print "do you want to execute JOB $job_num? [y|n]\n\n";
+        my $input = <STDIN>;
+        if ( $input =~/^y/i ){
+            $bkp->runjobs( $job_num );
+        }
+        $job_num++;
+    }
+
 
 =head1 AUTHOR
 
