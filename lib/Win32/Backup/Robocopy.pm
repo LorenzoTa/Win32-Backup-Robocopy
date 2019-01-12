@@ -1249,6 +1249,7 @@ The C<JOB> mode is mainly intended to implement scheduled backups using the C<cr
             src=> 'c:\DOCS',
             dst  => "x:\\",
             cron =>'* * * * *',
+            first_time_run => 1, # or during the current minute will be skipped
         );
 				
         # a second job for 'scripts'
@@ -1256,6 +1257,7 @@ The C<JOB> mode is mainly intended to implement scheduled backups using the C<cr
             src=> 'c:\perl\scripts',
             dst  => 'x:\\',
             cron=>'* * * * *',
+            first_time_run => 1, # see above: cron works on minutes!
         );
     }
     else{ print scalar $bkp->listjobs, " jobs retrieved from configuration file..\n"}
