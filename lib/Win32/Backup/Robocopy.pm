@@ -113,14 +113,16 @@ sub run	{
 						( $opt{emptysubfolders} ? '/E' : undef ),
 						( $opt{archive} ? '/A' : undef ),
 						( $opt{archiveremove} ? '/M' : undef ),
-						( $opt{noprogress} ? '/NP' : undef ),
+						#( $opt{noprogress} ? '/NP' : undef ),
+						( $opt{retries} ? "/R:$opt{retries}" : "/R:0" ),
+						( $opt{wait} ? "/W:$opt{wair}" : "/W:0" ),
 						# extra parameters for robocopy
 						@extra;
-	# verbosity
-	if ( $self->{verbose} ){
-		print "executing [robocopy.exe ",(join ' ', @cmdargs),"]\n";
-	}	
-	my ($stdout, $stderr, $exit, $exitstr) = _wrap_robocpy( @cmdargs );
+	# # verbosity
+	# if ( $self->{verbose} ){
+		# print "executing [robocopy.exe ",(join ' ', @cmdargs),"]\n";
+	# }	
+	my ($stdout, $stderr, $exit, $exitstr) = $self->_wrap_robocpy( @cmdargs );
 	# verbosity
 	if ( $self->{verbose} ){
 		print "STDOUT: $stdout\n" if $self->{verbose} > 1;
@@ -231,7 +233,7 @@ sub runjobs{
 				subfolders => $job->{subfolders},
 				emptysubfolders => $job->{emptysubfolders},
 				files => $job->{files},
-				noprogress => $job->{noprogress},				
+				#noprogress => $job->{noprogress},				
 			);
 			# updating next_time* in the job
 			my $cron = _get_cron( $job->{ cron } );
@@ -253,7 +255,7 @@ sub listjobs{
 	$arg{format} //= 'compact';
 	$arg{fields} //= [qw( name src dst files history cron next_time next_time_descr
 							first_time_run archive archiveremove subfolders emptysubfolders
-							noprogress waitdrive verbose debug)];
+							 waitdrive verbose debug)];
 							
 	unless ( wantarray ){ return scalar @{$self->{jobs}} }
 	my @res;
@@ -350,11 +352,11 @@ sub restore{
 			$src = File::Spec->catdir($arg{from},$src);
 			print "restoring from [$src]\n" if $arg{verbose};
 			my @cmdargs = ( $src, $arg{to}, @robo_params );
-			# verbosity
-			if ( $self->{verbose} ){
-				print "executing [robocopy.exe ",(join ' ', @cmdargs),"]\n";
-			}
-			my ($stdout, $stderr, $exit, $exitstr) = _wrap_robocpy( @cmdargs );
+			# # verbosity
+			# if ( $self->{verbose} ){
+				# print "executing [robocopy.exe ",(join ' ', @cmdargs),"]\n";
+			# }
+			my ($stdout, $stderr, $exit, $exitstr) = $self->_wrap_robocpy( @cmdargs );
 			# verbosity
 			if ( $self->{verbose} > 1 ){
 				print "STDOUT: $stdout\n" if $self->{verbose} > 1;
@@ -371,11 +373,11 @@ sub restore{
 	# NORMAL (non history) restore
 	else{
 		my @cmdargs = ( $arg{from}, $arg{to}, @robo_params );
-		# verbosity
-		if ( $self->{verbose} ){
-			print "executing [robocopy.exe ",(join ' ', @cmdargs),"]\n";
-		}
-		my ($stdout, $stderr, $exit, $exitstr) = _wrap_robocpy( @cmdargs );
+		# # verbosity
+		# if ( $self->{verbose} ){
+			# print "executing [robocopy.exe ",(join ' ', @cmdargs),"]\n";
+		# }
+		my ($stdout, $stderr, $exit, $exitstr) = $self->_wrap_robocpy( @cmdargs );
 		# verbosity
 		if ( $self->{verbose} > 1 ){
 			print "STDOUT: $stdout\n" if $self->{verbose} > 1;
@@ -395,9 +397,20 @@ sub restore{
 ##################################################################
 
 sub _wrap_robocpy{
+	my $self = shift;
 	my @cmdargs = @_;
+	# set safest parameters always!!
+	# /256 : Turn off very long path (> 256 characters) support
+	# this is very risky if unset and can lead to deep directory
+	# structure that the user cannot delete anymore.
+	# /NP : No Progress - don’t display % copied.
+	my @safest = qw( /256 /NP );
+	# verbosity
+	if ( $self->{verbose} ){
+		print "executing [robocopy.exe ",(join ' ', @cmdargs, @safest),"]\n";
+	}
 	my ($stdout, $stderr, $exit) = capture {
-		system( 'ROBOCOPY.EXE', @cmdargs );
+		system( 'ROBOCOPY.EXE', @cmdargs, @safest );
 	};
 	# !!
 	$exit = $exit>>8;
@@ -524,7 +537,7 @@ sub _load_conf{
 	croak "not an ARRAY ref retrieved from $file as conteainer for jobs! wrong configuration" 
 			unless ref $data eq 'ARRAY';
 	my @check = qw( name src dst files history cron next_time next_time_descr first_time_run archive
-				archiveremove subfolders emptysubfolders noprogress verbose debug waitdrive);
+				archiveremove subfolders emptysubfolders verbose debug waitdrive);
 	my $count = 1;
 	foreach my $job ( @$data ){
 		croak "not a HASH ref retrieved from $file for job $count! wrong configuration" 
@@ -596,9 +609,9 @@ sub _ordered_json{
 			archiveremove=> 9,	 # run
 			subfolders=> 10,	 # run
 			emptysubfolders=> 11,# run
-			noprogress=> 12,	 # run		
+			#noprogress=> 12,	 # run		
 			
-			waitdrive => 12.5,	# new
+			waitdrive => 12,	# new
 			verbose	=> 13, 		# new
 			debug	=>	15, 	# new
 	);
@@ -626,10 +639,14 @@ sub _default_run_params{
 	# /A : Copy only files with the Archive attribute set.
 	$opt{archive} //= 0;
 	# /M : like /A, but remove Archive attribute from source files.
-	$opt{archiveremove} //= 1;	
+	$opt{archiveremove} //= 1;
+	# /R:n : Number of Retries on failed copies - default is 1 million. 
+	$opt{retries} //= 0;
+	#  /W:n : Wait time between retries - default is 30 seconds.
+	$opt{wait} //= 0;
 	# logging options
     # /NP : No Progress - don’t display % copied.
-	$opt{noprogress} //= 1;
+	#$opt{noprogress} //= 1;
 	return %opt;
 }
 sub _verify_args{
@@ -649,6 +666,48 @@ sub _verify_args{
 1;
 
 __DATA__
+
+GIVEN:
+E:\
+└───path
+        conf.txt
+
+		
+GOOD BUT INUTILE:
+
+robocopy.exe E:\path E:\path *.* /E /NP /W:0  /R:0 /256
+
+gives:
+E:\
+└───path
+        conf.txt
+		
+
+
+NOT SO GOOD:
+1) robocopy.exe E:\path E:\path\BKP *.* /E /NP /W:0  /R:0
+
+gives:
+E:\
+└───path
+    │   conf.txt
+    │
+    └───BKP
+        │   conf.txt
+        │
+        └───BKP
+                conf.txt
+				
+
+
+BAD (DEEP RECURSION)
+
+1) robocopy.exe E:\path E:\path\BKP\ANOTHER_LEVEL *.* /E /NP /W:0  /R:0 /256
+
+2) robocopy.exe E:\path E:\path\BKP\ANOTHER_LEVEL\____AND_ANOTHER *.* /E /NP /W:0  /R:0 /256
+
+
+
 
 =head1 NAME
 
