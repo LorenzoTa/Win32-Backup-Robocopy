@@ -1142,7 +1142,7 @@ You can use an on the fly backup, for example, if you load a configurtion file a
             destination => 'c:\path\to\conf',
     );
 
-    my( $stdout, $stderr, $exit, $exitstr ) = $bkp->run();
+    my( $stdout, $stderr, $exit, $exitstr ) = $bkp->run( archiveremove => 0 );
         
     if ( $exit < 8 ){
         print "backup of configuration OK: $exitstr\n";
@@ -1158,7 +1158,9 @@ You can use an on the fly backup, for example, if you load a configurtion file a
             verbose => 2,
     );
 
-In the above example we pass to restore C<verbose> with the value of C<2> to have printed out many details of the restore operation.	
+In the above example we pass to restore C<verbose> with the value of C<2> to have printed out many details of the restore operation.
+
+Pay attention to the C<run> call: we used C<archiveremove =E<gt> 0> and it also use the default C<archive =E<gt> 0> and this will means that we are not looking at all to the archive bit of the file, nor we remove it: this setting will always copy the file. Defaults are set to backup only modified and new files.	
 
 =head2 maintain more copies
 
