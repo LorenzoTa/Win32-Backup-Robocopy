@@ -115,7 +115,7 @@ sub run	{
 						( $opt{archiveremove} ? '/M' : undef ),
 						#( $opt{noprogress} ? '/NP' : undef ),
 						( $opt{retries} ? "/R:$opt{retries}" : "/R:0" ),
-						( $opt{wait} ? "/W:$opt{wair}" : "/W:0" ),
+						( $opt{wait} ? "/W:$opt{wait}" : "/W:0" ),
 						# extra parameters for robocopy
 						@extra;
 	# # verbosity
@@ -817,6 +817,27 @@ a first time without checking the cron scheduling, ie at the firt invocation of 
     $bkp->runjobs;              
 
 
+	
+	
+=head2 sane defaults
+
+The C<robocopy.exe> program is full of options. This module is aimed to facilitate the backup task and so it assume some defaults. Every call to C<robocopy.exe> if nothing will be specified will result in:
+
+
+    robocopy.exe SOURCE DESTINATION *.* /E /M /R:0 /W:0 /256 /NP
+
+	
+Apart from source and destination, first five parameters can be modified during the C<run> call (see below the method desciption for details). 
+Last two switches will be present anyway: C</NP> eliminates the progress bar that can show the copied percentage and it is not useful as the module will collect all the output from the command.
+
+More important is the C</256> switch that disable the discutible feature permitting C<robocopy> to create folders with more than 256 characters in the path (the OS has a treshold of 260). 
+Without this switch, an eventual erroneous invocation can lead to a folder structure very difficult
+to remove because the explorer subsystem is not even able to remove nor rename it. Even specialized tools can fail ( booting Linux live distro and good old C<rm -rf> can help though ;)
+
+=head2 about verbosity
+
+
+
 =head1 METHODS (RUN mode)
 
 =head2 new
@@ -932,15 +953,15 @@ C<emptysubfolders> defaults to 1 and will set the C</E> ( copy subfolders, inclu
 
 =item 
 
-C<noprogress> defaults to 1 and will set the C</NP> ( no progress - do not display % copied ) robocopy switch
+C<retries> defaults to 0 and will set the C</R:N> (number of retries on error on file) robocopy switch
+
+=item 
+
+C<wait> defaults to 0 and will set the C</W:N> (seconds between retries) robocopy switch
 
 =item 
 
 C<extraparam> defaults to undef and can be used to pass any valid option to robocopy (see below)
-
-=item 
-
-C<verbose> defaults to what was defined in the construction of the backup obkect. Can be explicitally set during C<run> method call.
 
 =back
 
