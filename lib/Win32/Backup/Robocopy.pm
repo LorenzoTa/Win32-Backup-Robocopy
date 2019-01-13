@@ -537,7 +537,7 @@ sub _load_conf{
 	croak "not an ARRAY ref retrieved from $file as conteainer for jobs! wrong configuration" 
 			unless ref $data eq 'ARRAY';
 	my @check = qw( name src dst files history cron next_time next_time_descr first_time_run archive
-				archiveremove subfolders emptysubfolders verbose debug waitdrive);
+				archiveremove subfolders emptysubfolders verbose debug waitdrive wait retries);
 	my $count = 1;
 	foreach my $job ( @$data ){
 		croak "not a HASH ref retrieved from $file for job $count! wrong configuration" 
