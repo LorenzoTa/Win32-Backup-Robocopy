@@ -304,7 +304,7 @@ sub restore{
 	my @extra =  ref $arg{extraparam} eq 'ARRAY' 	?
 					@{ $arg{extraparam} }			:
 					split /\s+/, $arg{extraparam} // ''	;
-	my @robo_params = ( '*.*', '/E', '/DCOPY:T', '/SEC', '/NP /256', @extra );
+	my @robo_params = ( '*.*', '/E', '/DCOPY:T', '/SEC', '/R:0', '/W:0', @extra );
 	# build parameters to ROBOCOPY using some default and extraparam
 	# check if it is a restore from a history backup
 	opendir my $dirh, $arg{from} or croak "unable to open dir [$arg{from}] to read";
@@ -821,7 +821,7 @@ a first time without checking the cron scheduling, ie at the firt invocation of 
 	
 =head2 sane defaults
 
-The C<robocopy.exe> program is full of options. This module is aimed to facilitate the backup task and so it assume some defaults. Every call to C<robocopy.exe> if nothing will be specified will result in:
+The C<robocopy.exe> program is full of options. This module is aimed to facilitate the backup task and so it assume some defaults. Every call to C<robocopy.exe> made by C<run> and C<runjobs> if nothing will be specified will result in:
 
 
     robocopy.exe SOURCE DESTINATION *.* /E /M /R:0 /W:0 /256 /NP
@@ -833,6 +833,12 @@ Last two switches will be present anyway: C</NP> eliminates the progress bar tha
 More important is the C</256> switch that disable the discutible feature permitting C<robocopy> to create folders with more than 256 characters in the path (the OS has a treshold of 260). 
 Without this switch, an eventual erroneous invocation can lead to a folder structure very difficult
 to remove because the explorer subsystem is not even able to remove nor rename it. Even specialized tools can fail ( booting Linux live distro and good old C<rm -rf> can help though ;)
+
+by other hand, if nothing is specified, every call of the C<restore> method will result in:
+
+    robocopy.exe SOURCE DESTINATION *.* /E /DCOPY:T /SEC /R:0 /W:0 /NP /256 
+	
+with the important difference respect to archive bit that are not looked for nor reset.
 
 =head2 about verbosity
 
