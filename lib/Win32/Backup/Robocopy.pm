@@ -836,7 +836,7 @@ to remove because the explorer subsystem is not even able to remove nor rename i
 
 by other hand, if nothing is specified, every call of the C<restore> method will result in:
 
-    robocopy.exe SOURCE DESTINATION *.* /E /DCOPY:T /SEC /R:0 /W:0 /NP /256 
+    robocopy.exe SOURCE DESTINATION *.* /E /DCOPY:T /SEC /R:0 /W:0 /256 /NP
 	
 with the important difference respect to archive bit that are not looked for nor reset.
 
