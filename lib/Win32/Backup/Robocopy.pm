@@ -10,7 +10,7 @@ use JSON::PP; # only this support sort_by(custom_func)
 use Capture::Tiny qw(capture);
 use DateTime::Tiny;
 use Algorithm::Cron;
-our $VERSION = 6;
+our $VERSION = 7;
 
 sub new {
 	my $class = shift;
@@ -304,7 +304,7 @@ sub restore{
 	my @extra =  ref $arg{extraparam} eq 'ARRAY' 	?
 					@{ $arg{extraparam} }			:
 					split /\s+/, $arg{extraparam} // ''	;
-	my @robo_params = ( '*.*', '/E', '/DCOPY:T', '/SEC', '/NP', @extra );
+	my @robo_params = ( '*.*', '/E', '/DCOPY:T', '/SEC', '/NP /256', @extra );
 	# build parameters to ROBOCOPY using some default and extraparam
 	# check if it is a restore from a history backup
 	opendir my $dirh, $arg{from} or croak "unable to open dir [$arg{from}] to read";
