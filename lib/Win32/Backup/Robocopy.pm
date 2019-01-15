@@ -819,9 +819,9 @@ a first time without checking the cron scheduling, ie at the firt invocation of 
 
 	
 	
-=head2 sane defaults
+=head2 robocopy used defaults
 
-The C<robocopy.exe> program is full of options. This module is aimed to facilitate the backup task and so it assume some defaults. Every call to C<robocopy.exe> made by C<run> and C<runjobs> if nothing will be specified will result in:
+The C<robocopy.exe> program is full of options. This module is aimed to facilitate the backup task and so it assume some defaults. Every call to C<robocopy.exe> made by C<run> and C<runjobs> if nothing is specified will result in:
 
 
     robocopy.exe SOURCE DESTINATION *.* /E /M /R:0 /W:0 /256 /NP
@@ -832,7 +832,7 @@ Last two switches will be present anyway: C</NP> eliminates the progress bar tha
 
 More important is the C</256> switch that disable the discutible feature permitting C<robocopy> to create folders with more than 256 characters in the path (the OS has a treshold of 260). 
 Without this switch, an eventual erroneous invocation can lead to a folder structure very difficult
-to remove because the explorer subsystem is not even able to remove nor rename it. Even specialized tools can fail ( booting Linux live distro and good old C<rm -rf> can help though ;)
+to remove because the explorer subsystem is not even able to remove nor rename it. Even specialized tools can fail ( booting Linux live distro and good old C<rm -rf> can help though ;). Even if other checks in the module are to prevent such bad results the switch will be always present.
 
 by other hand, if nothing is specified, every call of the C<restore> method will result in:
 
@@ -842,7 +842,8 @@ with the important difference respect to archive bit that are not looked for nor
 
 =head2 about verbosity
 
-
+Verbosity of the module can vary from C<0> (default value, no outptut at all) to C<2> giving lot of informations and dumping jobs and configuration. 
+The C<verbose> parameter can be set in the main backup object during the construction made by C<new>  and in this case will be inherited by all other methods. But C<run> C<job> C<runjobs> and C<restore> methods can be feed too with a C<verbose> parameter that will be in use only during the call.
 
 =head1 METHODS (RUN mode)
 
