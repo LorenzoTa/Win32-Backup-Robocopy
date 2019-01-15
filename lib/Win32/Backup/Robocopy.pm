@@ -286,6 +286,8 @@ sub restore{
 				$_ 										:
 				File::Spec->rel2abs( $_ ) ;
 	} $arg{from}, $arg{to};
+	# checks against deep recursion
+	_is_safe( $arg{from}, $arg{to} );
 	# check source directory
 	croak "'from' parameter points to a non existing directory!" unless -d $arg{from};
 	# check and create destination directory
@@ -661,50 +663,59 @@ sub _verify_args{
 	} $arg{src}, $arg{dst};
 	carp "backup source [$arg{src}] does not exists!".
 			"(this is only a warning)" unless -d $arg{src};
+	# checks against deep recursion
+	_is_safe( $arg{src}, $arg{dst} );
 	return %arg;	
+}
+
+sub _is_safe{
+	my( $src, $dst ) = @_;
+	# these checks are here to prevent deep recursive copy
+	# possibly leading to unrecoverable directory structure
+	# this is enforced even if the /256 switch is added to
+	# every robocopy call.
+	# GIVEN:
+	# E:\
+	# └───path
+	#		  conf.txt
+    #	
+	# GOOD BUT INUTILE:
+	# robocopy.exe E:\path E:\path *.* /E /NP /W:0  /R:0 /256
+	# gives:
+	# E:\
+	# └───path
+	#		  conf.txt
+	#
+	# NOT SO GOOD:
+	# 1) robocopy.exe E:\path E:\path\BKP *.* /E /NP /W:0  /R:0
+	# gives:
+	# E:\
+	# └───path
+	#	  │   conf.txt
+	#	  │
+	#	  └───BKP
+	#		  │   conf.txt
+	#		  │
+	#		  └───BKP
+	#			  conf.txt
+	#
+	# BAD (DEEP RECURSION)
+	# 1) robocopy.exe E:\path E:\path\BKP\ANOTHER_LEVEL *.* /E /NP /W:0  /R:0 /256
+	# 2) robocopy.exe E:\path E:\path\BKP\ANOTHER_LEVEL\____AND_ANOTHER *.* /E /NP /W:0  /R:0 /256
+	if ( $dst =~ /^\Q$src\E$/i ){
+		carp "SRC and DST are equal! This might be not what you intended."
+	}
+	elsif ( $dst =~ /^\Q$src\E./i ){
+		croak "DST [$dst] is under SRC [$src]!\n".
+				"this is will lead to a recursive copy of of SRC, or at least ".
+				"to an unexpected or unwanted directory structure."
+	}
+	else{ return }	
 }
 1;
 
 __DATA__
 
-GIVEN:
-E:\
-└───path
-        conf.txt
-
-		
-GOOD BUT INUTILE:
-
-robocopy.exe E:\path E:\path *.* /E /NP /W:0  /R:0 /256
-
-gives:
-E:\
-└───path
-        conf.txt
-		
-
-
-NOT SO GOOD:
-1) robocopy.exe E:\path E:\path\BKP *.* /E /NP /W:0  /R:0
-
-gives:
-E:\
-└───path
-    │   conf.txt
-    │
-    └───BKP
-        │   conf.txt
-        │
-        └───BKP
-                conf.txt
-				
-
-
-BAD (DEEP RECURSION)
-
-1) robocopy.exe E:\path E:\path\BKP\ANOTHER_LEVEL *.* /E /NP /W:0  /R:0 /256
-
-2) robocopy.exe E:\path E:\path\BKP\ANOTHER_LEVEL\____AND_ANOTHER *.* /E /NP /W:0  /R:0 /256
 
 
 

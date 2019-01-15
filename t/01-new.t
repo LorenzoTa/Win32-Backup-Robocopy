@@ -23,7 +23,7 @@ map{ note( join ' ',$_,($_->VERSION // '?' ) ) }
 	
 ;
 # object of proper class
-isa_ok( Win32::Backup::Robocopy->new( name => 'zero', source =>'.'), 'Win32::Backup::Robocopy' );
+isa_ok( Win32::Backup::Robocopy->new( name => 'zero', source =>'X:/'), 'Win32::Backup::Robocopy' );
 
 ###################
 # testing RUN mode
@@ -32,7 +32,7 @@ isa_ok( Win32::Backup::Robocopy->new( name => 'zero', source =>'.'), 'Win32::Bac
 note('testing RUN mode instantiation');
 
 # module has sane defaults while in RUN mode
-my $bkp = Win32::Backup::Robocopy->new( name => 'test', src	=> '.', );
+my $bkp = Win32::Backup::Robocopy->new( name => 'test', src	=> 'x:/', );
 ok ($bkp->{dst} eq File::Spec->rel2abs( '.' ),'default destination');
 
 # in the RUN mode no job entry is present
