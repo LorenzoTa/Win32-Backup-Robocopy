@@ -40,7 +40,7 @@ ok (! exists $bkp->{jobs}, 'no jobs entry exists in main object while in RUN mod
 dies_ok { $bkp->job } 'job method is expected to die while in RUN mode';
 
 # warning if source does not exists
-my (undef, $err, undef) = capture { 
+my ($out, $err, @res) = capture { 
 						my $nobkp = Win32::Backup::Robocopy->new( 
 						name => 'warning',
 						src => File::Spec->catdir ( Win32::GetNextAvailDrive(),'' ),
@@ -84,7 +84,7 @@ ok (! exists $bkp->{history}, 'no history entry exists in main object while in J
 note('testing arguments against deep recursion');
 
 # warn if dst and src are equal
-my ($out, $err, @res) = capture { Win32::Backup::Robocopy->new( name => 'equal', src => '.', dst => '.' ) };
+($out, $err, @res) = capture { Win32::Backup::Robocopy->new( name => 'equal', src => '.', dst => '.' ) };
 like ($err, qr/^SRC and DST are equal! This might be not what you intended./,
 	"warning expected when source and destination are equal");
 
