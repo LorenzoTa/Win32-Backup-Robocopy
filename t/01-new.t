@@ -6,8 +6,6 @@ use Test::More;
 use Test::Exception;
 use Capture::Tiny qw(capture);
 
-plan tests => 12;
-
 # use ok
 use_ok( 'Win32::Backup::Robocopy' ) || print "Bail out!\n";  
 
@@ -77,3 +75,30 @@ ok (! exists $bkp->{dst}, 'no destination entry exists in main object while in J
 
 # in job mode no history is present
 ok (! exists $bkp->{history}, 'no history entry exists in main object while in JOB mode');
+
+
+###################
+# testing deep recurse
+###################
+
+note('testing arguments against deep recursion');
+
+# warn if dst and src are equal
+my ($out, $err, @res) = capture { Win32::Backup::Robocopy->new( name => 'equal', src => '.', dst => '.' ) };
+like ($err, qr/^SRC and DST are equal! This might be not what you intended./,
+	"warning expected when source and destination are equal");
+
+	
+# warn if dst and src are equal (case insensitive and different path separator)
+($out, $err, @res) = capture { Win32::Backup::Robocopy->new( name => 'equal', src => 'c:\\', dst => 'C:/' ) };
+like ($err, qr/^SRC and DST are equal! This might be not what you intended./,
+	"warning expected when source and destination are equal (case insensitive)");
+
+# die if dst is under src
+dies_ok { Win32::Backup::Robocopy->new( name => 'deep', src => '.', dst => './a' ) } 
+		'expecting to die if destination is under source';
+# die if dst is under src
+dies_ok { Win32::Backup::Robocopy->new( name => 'deep', src => '.', dst => './a/b' ) } 
+		'expecting to die if destination is deeply under source';
+
+done_testing();

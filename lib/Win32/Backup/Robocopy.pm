@@ -657,8 +657,9 @@ sub _verify_args{
 	$arg{src} //= $arg{source};
 	croak "backup need a source!" unless $arg{src};
 	$arg{dst} //= $arg{destination} // '.';
-	map { $_ =  File::Spec->file_name_is_absolute( $_ ) ?
-				$_ 										:
+	map { $_ =  #File::Spec->file_name_is_absolute( $_ ) ?
+				#$_ 										:
+				# this will be useful anyway: homegenous path separator, uppercase drives..
 				File::Spec->rel2abs( $_ ) ;
 	} $arg{src}, $arg{dst};
 	carp "backup source [$arg{src}] does not exists!".
