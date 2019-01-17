@@ -93,8 +93,8 @@ sub run	{
 		my @dirs = File::Spec->splitdir( $dst );
 		unless ( -d $dirs[0] ){
 			if ( $self->{waitdrive} ){
-				$self->_waitdrive( $dirs[0] );
-				return;
+					$self->_waitdrive( $dirs[0] );
+					return;
 			}
 			else { croak ("destination drive $dirs[0] is not accessible!") }
 		}
@@ -113,15 +113,10 @@ sub run	{
 						( $opt{emptysubfolders} ? '/E' : undef ),
 						( $opt{archive} ? '/A' : undef ),
 						( $opt{archiveremove} ? '/M' : undef ),
-						#( $opt{noprogress} ? '/NP' : undef ),
 						( $opt{retries} ? "/R:$opt{retries}" : "/R:0" ),
 						( $opt{wait} ? "/W:$opt{wait}" : "/W:0" ),
 						# extra parameters for robocopy
 						@extra;
-	# # verbosity
-	# if ( $self->{verbose} ){
-		# print "executing [robocopy.exe ",(join ' ', @cmdargs),"]\n";
-	# }	
 	my ($stdout, $stderr, $exit, $exitstr) = $self->_wrap_robocpy( @cmdargs );
 	# verbosity
 	if ( $self->{verbose} ){
@@ -354,10 +349,6 @@ sub restore{
 			$src = File::Spec->catdir($arg{from},$src);
 			print "restoring from [$src]\n" if $arg{verbose};
 			my @cmdargs = ( $src, $arg{to}, @robo_params );
-			# # verbosity
-			# if ( $self->{verbose} ){
-				# print "executing [robocopy.exe ",(join ' ', @cmdargs),"]\n";
-			# }
 			my ($stdout, $stderr, $exit, $exitstr) = $self->_wrap_robocpy( @cmdargs );
 			# verbosity
 			if ( $self->{verbose} > 1 ){
@@ -375,10 +366,6 @@ sub restore{
 	# NORMAL (non history) restore
 	else{
 		my @cmdargs = ( $arg{from}, $arg{to}, @robo_params );
-		# # verbosity
-		# if ( $self->{verbose} ){
-			# print "executing [robocopy.exe ",(join ' ', @cmdargs),"]\n";
-		# }
 		my ($stdout, $stderr, $exit, $exitstr) = $self->_wrap_robocpy( @cmdargs );
 		# verbosity
 		if ( $self->{verbose} > 1 ){
@@ -611,7 +598,6 @@ sub _ordered_json{
 			archiveremove=> 9,	 # run
 			subfolders=> 10,	 # run
 			emptysubfolders=> 11,# run
-			#noprogress=> 12,	 # run		
 			
 			waitdrive => 12,	# new
 			verbose	=> 13, 		# new
@@ -625,7 +611,6 @@ sub _default_new_params{
 	$opt{verbose} //= 0;
 	$opt{debug} //= 0;
 	$opt{waitdrive} //= 0;
-	#$opt{writelog} //= 1;
 	return %opt;
 }
 sub _default_run_params{
@@ -646,9 +631,6 @@ sub _default_run_params{
 	$opt{retries} //= 0;
 	#  /W:n : Wait time between retries - default is 30 seconds.
 	$opt{wait} //= 0;
-	# logging options
-    # /NP : No Progress - don’t display % copied.
-	#$opt{noprogress} //= 1;
 	return %opt;
 }
 sub _verify_args{
@@ -657,11 +639,7 @@ sub _verify_args{
 	$arg{src} //= $arg{source};
 	croak "backup need a source!" unless $arg{src};
 	$arg{dst} //= $arg{destination} // '.';
-	map { $_ =  #File::Spec->file_name_is_absolute( $_ ) ?
-				#$_ 										:
-				# this will be useful anyway: homegenous path separator, uppercase drives..
-				File::Spec->rel2abs( $_ ) ;
-	} $arg{src}, $arg{dst};
+	map { $_ =  File::Spec->rel2abs( $_ ) } $arg{src}, $arg{dst};
 	carp "backup source [$arg{src}] does not exists!".
 			"(this is only a warning)" unless -d $arg{src};
 	# checks against deep recursion
