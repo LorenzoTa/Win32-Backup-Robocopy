@@ -707,9 +707,9 @@ Win32::Backup::Robocopy - a simple backup solution using robocopy
 
     # RUN mode 
     my $bkp = Win32::Backup::Robocopy->new(
-            name 	=> 'my_perl_archive',        
-            source	=> 'c:\scripts',
-            destination	=> 'x:\backup',
+            name 	=> 'my_perl_archive',       # mandatory       
+            source	=> 'c:\scripts',            # mandatory
+            destination	=> 'x:\backup',         # '.' if not specified
             history	=> 1,                         
     );
     my( $stdout, $stderr, $exit, $exitstr, $createdfolder ) = $bkp->run();
@@ -766,10 +766,10 @@ named using a timestamp like C<2022-04-12T09-02-36>
 	
     my( $stdout, $stderr, $exit, $exitstr, $createdfolder ) = $bkp->run();
 
-The second mode is the JOB one. In this mode yuo must only specify a C<config> parameter during the object instantiation. You can
+The second mode is the JOB one. In this mode you must only specify a C<config> parameter during the object instantiation. You can
 add different jobs to the queue or load them from a configuration file. Configuration file is read and written in JSON.
 Then you just call C<runjobs> method to process them all.
-The JOB mode add the possibility of scheduling jobs using C<crontab> like strings (using L<Algorithm::Cron> under the hoods). 
+The JOB mode adds the possibility of scheduling jobs using C<crontab> like strings (using L<Algorithm::Cron> under the hoods). 
 
 
     # JOB mode - loading jobs from configuration file
@@ -778,10 +778,8 @@ The JOB mode add the possibility of scheduling jobs using C<crontab> like string
 
     $bkp->runjobs;
 	
-You can add jobs to the queue using the C<job> method. This method will accepts all parameters and assumes all defautls of
-the C<new> method in the RUN mode and of the C<run> method of the RUN mode. The C<job> method add
-a crontab like entry to have the job run only when needed. You can also specify C<first_time_run> to 1 to have the job run
-a first time without checking the cron scheduling, ie at the firt invocation of C<runjobs>
+You can add jobs to the queue using the C<job> method. This method will accepts all parameters and assumes all defaults of the C<new> method in the RUN mode and of the C<run> method of the RUN mode. 
+In addition the C<job> method wants a crontab like entry to have the job run only when needed. You can also specify C<first_time_run> to 1 to have the job run a first time without checking the cron scheduling, ie at the first invocation of C<runjobs>
 
     # JOB mode - adding  jobs 
 	
@@ -806,22 +804,23 @@ a first time without checking the cron scheduling, ie at the firt invocation of 
 	
 =head2 robocopy used defaults
 
-The C<robocopy.exe> program is full of options. This module is aimed to facilitate the backup task and so it assume some defaults. Every call to C<robocopy.exe> made by C<run> and C<runjobs> if nothing is specified will result in:
+The C<robocopy.exe> program is full of options. This module is aimed to facilitate the backup task and so it assumes some defaults. Every call to C<robocopy.exe> made by C<run> and C<runjobs> if nothing is specified will result in:
 
 
-    robocopy.exe SOURCE DESTINATION *.* /E /M /R:0 /W:0 /256 /NP
+    robocopy.exe SOURCE DESTINATION *.* /E /M /R:0 /W:0 /NP /256 
 
 	
 Apart from source and destination, first five parameters can be modified during the C<run> call (see below the method desciption for details). 
-Last two switches will be present anyway: C</NP> eliminates the progress bar that can show the copied percentage and it is not useful as the module will collect all the output from the command.
+Last two switches will be present anyway: C</NP> eliminates the progress bar that can show the copied percentage and that it is not useful as the module will collect all the output from the command.
 
 More important is the C</256> switch that disable the discutible feature permitting C<robocopy> to create folders with more than 256 characters in the path (the OS has a treshold of 260). 
-Without this switch, an eventual erroneous invocation can lead to a folder structure very difficult
-to remove because the explorer subsystem is not even able to remove nor rename it. Even specialized tools can fail ( booting Linux live distro and good old C<rm -rf> can help though ;). Even if other checks in the module are to prevent such bad results the switch will be always present.
+Without this switch, an eventual erroneous invocation can lead to a folder structure very difficult to remove because the explorer subsystem is not even able to remove nor rename it.
 
-by other hand, if nothing is specified, every call of the C<restore> method will result in:
+Even specialized tools can fail ( booting Linux live distro and good old C<rm -rf> can help though ;). Even if other checks in the module are to prevent these bad results the switch will be always present.
 
-    robocopy.exe SOURCE DESTINATION *.* /E /DCOPY:T /SEC /R:0 /W:0 /256 /NP
+By other hand, if nothing is specified, every call of the C<restore> method will result in:
+
+    robocopy.exe SOURCE DESTINATION *.* /E /DCOPY:T /SEC /R:0 /W:0 /NP /256 
 	
 with the important difference respect to archive bit that are not looked for nor reset.
 
@@ -834,16 +833,11 @@ The C<verbose> parameter can be set in the main backup object during the constru
 
 =head2 new
 
-As already stated C<new> only needs two mandatory parameters: C<name> ( the name of the backup governing
-the destination folder name too) and C<source> ( you can use also the abbreviated C<src> form ) that
-specify what you intend to backup. The C<new> method will emit a warning if the source for the backup
-does not exists but do not exit the program: this can be useful to spot a typo leaving to you if the is
-the right thing (maybe you want to backup a remote folder not available at the moment).
+As already stated C<new> only needs two mandatory parameters: C<name> ( the name of the backup governing the destination folder name too) and C<source> ( you can use also the abbreviated C<src> form ) that specify what you intend to backup. 
+The C<new> method will emit a warning if the source for the backup does not exists but do not exit the program: this can be useful to spot a typo leaving to you if that is the right thing (maybe you want to backup a remote folder not available at the moment).
 
-If you do not specify a C<destination> ( or the abbreviated form C<dst> ) you'll have backup folders created
-inside the current directory, ie the module assumes C<destination> to be C<'.'> unless specified.
-During the object construction C<destination> will be crafted using the provided path and the C<name>
-you used for the backup.
+If you do not specify a C<destination> ( or the abbreviated form C<dst> ) you'll have backup folders created inside the current directory, ie the module assumes C<destination> to be C<'.'> unless specified.
+During the object construction C<destination> will be crafted using the provided path and the C<name> you used for the backup.
 
 If your current running program is in the C<c:/scripts> directory the following invocation
 
@@ -852,7 +846,8 @@ If your current running program is in the C<c:/scripts> directory the following 
             source	=> 'x:\perl_stuff',            
     );
 
-will produces a C<destination> equal to C<c:/scripts/my_perl_archive> and here willl be backed up your files.
+will produces a C<destination> equal to C<c:/scripts/my_perl_archive> and here will be backed up your files.
+
 By other hand:
 
     my $bkp = Win32::Backup::Robocopy->new(
@@ -864,18 +859,14 @@ By other hand:
 will produces a C<destination> equal to C<Z:/backups/my_perl_archive>
 
 
-All paths and filenames passed in during costruction will be checked to be absolute and if needed made absolute
-using L<File::Spec> so you can be quite sure the rigth thing will be done with relative paths.
+All paths and filenames passed in during costruction will be checked to be absolute and if needed made absolute using L<File::Spec> so you can be quite sure the rigth thing will be done with relative paths.
 
-The C<new> method does not do any check against folders for existence, it merely prepare folder names to be used by C<run>
+The C<new> method does not do any check against destination folders existence; it merely prepare folder names to be used by C<run>
 
-The module provide a mechanism to spot unavailable destination drive and ask the user to connect it. If you 
-specify C<waitdrive =E<gt> 1> during the object construction then the program will not die when the drive specified
-for the destination folder is not present. Instead it opens a prompt asking the user to connect the appropriate drive
-to continue. The deafult value of C<waitdrive> is 0 ie. the program will die for the drive to be unavailable and
-creation of the destination folder impossible.
+The module provides a mechanism to spot unavailable destination drive and ask the user to connect it. 
+If you specify C<waitdrive =E<gt> 1> during the object construction then the program will not die when the drive specified as destination is not present. Instead it opens a prompt asking the user to connect the appropriate drive to continue. The deafult value of C<waitdrive> is 0 ie. the program will die if the drive is unavailable and creation of the destination folder impossible.
 
-Wait for the drive is useful in case of backups with destination, let's say, an USB drive: see L<EXMPLES> section.
+To wait for the drive is useful in case of backups with destination, let's say, an USB drive: see L<EXMPLES> section.
 
 Overview of parameters accepted by C<new> and their defaults:
 
@@ -898,15 +889,15 @@ C<destination> or C<dst> defaults to C<'./'>
 
 =item 
 
-C<history> defaults to 0 meaning all invocation of the backup will write to the same folder or folder with timestamp if true
+C<history> defaults to 0 meaning all invocation of the backup will write to the same folder or folder with timestamp if 1
 
 =item 
 
-C<waitdrive> defaults to 0 stopping the program if destination drive does not exists, asking the user if true
+C<waitdrive> defaults to 0 stopping the program if destination drive does not exists, asking the user if 1
 
 =item 
 
-C<verbose> defaults to 0 governs the output of the program
+C<verbose> defaults to 0 governs the amount of output emitted by the program
 
 
 =back
@@ -916,20 +907,18 @@ C<verbose> defaults to 0 governs the output of the program
 
 =head2 run
 
-This method will effectively run the backup. It checks needed folder for existence and try to create them using L<File::Path>
-and will croak if error are encountered.
-If C<run> is invoked without any optional parameter C<run> will assumes some default options to pass to the C<robocopy> 
-system call:
+This method will effectively run the backup. It checks needed folder for existence and try to create them using L<File::Path> and will croak if error are encountered.
+If C<run> is invoked without any optional parameter C<run> will assume some default options to pass to the C<robocopy> system call:
 
 =over 
 
 =item 
 
-C<files> defaults to C<*.*>  robocopy will assumes all file unless specified: the module passes it explicitly (see below)
+C<files> defaults to C<*.*>  robocopy will assume all file unless specified: the module passes it explicitly (see below)
 
 =item 
 
-C<archive> defaults to 0 and will set the C</A> ( copy only files with the archive attribute set ) robocopy switch
+C<archive> defaults to 0 and will set the C</A> if 1 ( copy only files with the archive attribute set ) robocopy switch
 
 =item 
 
@@ -937,7 +926,7 @@ C<archiveremove> defaults to 1 and will set the C</M> ( like C</A>, but remove a
 
 =item 
 
-C<subfolders> defaults to 0 and will set the C</S> ( copy subfolders ) robocopy switch
+C<subfolders> defaults to 0 and will set the C</S> if 1 ( copy subfolders ) robocopy switch
 
 =item 
 
@@ -945,11 +934,11 @@ C<emptysubfolders> defaults to 1 and will set the C</E> ( copy subfolders, inclu
 
 =item 
 
-C<retries> defaults to 0 and will set the C</R:N> (number of retries on error on file) robocopy switch
+C<retries> defaults to 0 and will set the C</R:N> if N (number of retries on error on file) robocopy switch
 
 =item 
 
-C<wait> defaults to 0 and will set the C</W:N> (seconds between retries) robocopy switch
+C<wait> defaults to 0 and will set the C</W:N> if N (seconds between retries) robocopy switch
 
 =item 
 
@@ -961,14 +950,10 @@ So if you dont want empty subfolders to be backed up you can run:
 
 	$bkp->run( emptysufolders => 0 )
 	
-Pay attention modifying C<archive> and C<archiveremove> parameters: infact this is the basic machanism of the backup: on MSWin32 OSs
-whenever a file is created or modified the archive bit is set. This module with it's defualts values of C<archive> and C<archiveremove>
-will backup only new or modified files and will unset the archive bit in the original file.
+Pay attention modifying C<archive> and C<archiveremove> parameters: infact this is the basic machanism of the backup: on MSWin32 OSs whenever a file is created or modified the archive bit is set. This module with it's defualts values of C<archive> and C<archiveremove> will backup only new or modified files and will unset the archive bit in the original file.
 
 The C<run> method effectively executes the C<robocopy.exe> system call using L<Capture::Tiny> C<capture> method.
-The C<run> method returns four elements: 1) the output emitted by the system call, 2) the error stream eventually produced,
-3) the exit code of the call ( first three elements provided by L<Capture::Tiny> ) and 4) the text relative to the exit code. A fifth 
-returned value will be present if the backup has C<history =E<gt> 1> and it's value will be the name of the folder with timestamp just created.
+The C<run> method returns four elements: 1) the output emitted by the system call, 2) the error stream eventually produced, 3) the exit code of the call ( first three elements provided by L<Capture::Tiny> ) and 4) the text relative to the exit code. A fifth returned value will be present if the backup has C<history =E<gt> 1> and it's value will be the name of the folder with timestamp just created.
 
 	my( $stdout, $stderr, $exit, $exitstr ) = $bkp->run();
 	
@@ -989,15 +974,13 @@ returned value will be present if the backup has C<history =E<gt> 1> and it's va
 Read about C<robocopy.exe> exit codes L<here|https://ss64.com/nt/robocopy-exit.html>
 
 C<robocopy.exe> accepts, after source and destination, a third parameter in the form of a list of files or wildcard.
-C<robocopy.exe> assumes this to be C<*.*> unless specified but the present module passes it always explicitly to let
-you to modify it at your will. To backup just C<*.pl> files invoke C<run> as follow:
+C<robocopy.exe> assumes this to be C<*.*> unless specified but the present module passes it always explicitly to let you to modify it at your will. To backup just C<*.pl> files invoke C<run> as follow:
 
     $bkp->run( files => '*.pl');  
 
 You can read more about Windows wildcards L<here|https://ss64.com/nt/syntax-wildcards.html>	
 
-C<robocopy.exe> accepts a lot of parameters and the present module just plays around a handfull of them, but
-you can pass any desired parameter using C<extraparam> so if you need to have all destination files to be readonly you 
+C<robocopy.exe> accepts a lot of parameters and the present module just plays around a handfull of them, but you can pass any desired parameter using C<extraparam> so if you need to have all destination files to be readonly you 
 can profit the C</A+:[RASHCNET]> robocopy option:
 
     $bkp->run( extraparam => '/A+:R');
@@ -1014,11 +997,9 @@ Read about all parameters accepted by C<robocopy.exe> L<here|https://ss64.com/nt
 =head2 new
 
 The only mandatory parameter needed by C<new> is C<conf> (or C<config> or C<configuration>) while in JOB mode. 
-The value passed will be transformed into an absolute path and if the file exists and is readable and it contains
-a valid JSON datastructure, the configuration is loaded and the job queue filled accordingly.
+The value passed will be transformed into an absolute path and if the file exists and is readable and it contains a valid JSON datastructure, the configuration is loaded and the job queue filled accordingly.
 
-If, by other hand, the file does not exists,  C<new> does not complain, assuming the queue of jobs to be filled
-soon using the C<job> method described below.
+If, by other hand, the file does not exists,  C<new> does not complain, assuming the queue of jobs to be filled soon using the C<job> method described below.
 
 
 =head2 job
@@ -1108,8 +1089,9 @@ This method just needs two parameters: C<from> and C<to> like in:
 
 When each folder contained in the given source to restore has a name as given by a C<history> backup, eg. like C<2022-04-12T09-02-36> and the folder used as source to restore contains only  folders and no other object at all, then, if these conditions are met, each folder will be used as source starting from the older one to the newer one.
 
-This behaviour permits a restore to a point in time using the C<upto> parameter in the C<restore> call. Let's say you have backed up some folder with an C<history> backup and now 
-tou have the following folders:
+This behaviour permits a restore to a point in time using the C<upto> parameter in the C<restore> call. 
+
+Let's say you have backed up some folder with an C<history> backup and now you have the following folders:
 
 	2019-01-04T20-29-10
 	2019-01-05T20-29-10
@@ -1144,7 +1126,7 @@ Pay attention to what is said in the L<DateTime::Tiny> documentation about time 
     gmtime:    Sun Jan  6 20:29:10 2019
 
 
-The C<restore> method will execute a C<robocopy.exe> call with defaut arguments C<'*.*', '/E', '/DCOPY:T', '/SEC', '/NP'> but you can pass other ones using the C<extraparam> parameter being it a string or an array reference with a list of valid C<robocopy.exe> parameters.
+The C<restore> method will execute a C<robocopy.exe> call with defaut arguments C<'*.*', '/E', '/DCOPY:T', '/SEC', '/NP' '/256'> but you can pass other ones using the C<extraparam> parameter being it a string or an array reference with a list of valid C<robocopy.exe> parameters.
 
 Both history and normal restore can output more informations if C<verbose> is set in the main backup object or if it is passed in directly during the C<restore> method call.
 
@@ -1164,8 +1146,7 @@ Writing to the configuration file done by the present module will maintain the j
 	
     $bkp->job( src => '.', dst => 'x:/dest', name => 'first', cron => '* 4 * * *' ); 
 	
-    $bkp->runjobs;
-	
+    
 	
 Will produce the following configuration:
 
@@ -1192,8 +1173,7 @@ Will produce the following configuration:
      }
   ]
 
-you can freely add and modify by hand the configuration file, paying attention to the C<next_time> and C<next_time_descr> entries
-that are respectively seconds since epoch for the next scheduled run and the human readable form of the previous entry.
+you can freely add and modify by hand the configuration file, paying attention to the C<next_time> and C<next_time_descr> entries that are respectively seconds since epoch for the next scheduled run and the human readable form of the previous entry.
 Note that C<next_time_descr> is just a label and does not affect the effective running time.
 
 =head1 EXAMPLES
@@ -1206,12 +1186,12 @@ You can use an on the fly backup, for example, if you load a configurtion file a
     use warnings;
     use Win32::Backup::Robocopy;
     
-    # the following will backup into c:\path\to\conf\conf_bkp
+    # the following will backup into x:\conf_bkp
     # ie the destination plus the name of the backup
     my $bkp = Win32::Backup::Robocopy->new(
             name        => 'conf_bkp',       
             source      => 'c:\path\to\conf',
-            destination => 'c:\path\to\conf',
+            destination => 'x:\',
     );
 
     my( $stdout, $stderr, $exit, $exitstr ) = $bkp->run( archiveremove => 0 );
@@ -1225,7 +1205,7 @@ You can use an on the fly backup, for example, if you load a configurtion file a
     print "starting restore:\n";
 	
     $bkp->restore(  
-            from => 'c:\path\to\conf\conf_bkp',  # the name of backup appended
+            from => 'x:\conf_bkp',  # the name of backup appended
             to => 'c:\path\to\conf',             # to the backup destination
             verbose => 2,
     );
@@ -1241,7 +1221,7 @@ If you instead have a program running monthly, which modify a configuration file
     my $bkp = Win32::Backup::Robocopy->new(
             name        => 'conf_bkp',       
             source      => 'c:\path\to\conf',
-            destination => 'c:\path\to\conf',
+            destination => 'x:/',
             history     => 1,
     );
 
@@ -1254,9 +1234,9 @@ If you instead have a program running monthly, which modify a configuration file
 And this will add following lines to your program:
 
     backup SRC: [c:\path\to\conf]
-    backup DST: [c:\path\to\conf\conf_bkp\2019-01-11T23-11-09]
-    mkdir c:\path\to\conf\conf_bkp\2019-01-11T23-11-09
-    executing [robocopy.exe c:\path\to\conf c:\path\to\conf\conf_bkp\2019-01-11T23-11-09 *.* /E /M /NP]
+    backup DST: [x:\conf_bkp\2019-01-11T23-11-09]
+    mkdir x:\conf_bkp\2019-01-11T23-11-09
+    executing [robocopy.exe c:\path\to\conf x:\conf_bkp\2019-01-11T23-11-09 *.* /E /M /NP]
     robocopy.exe exit description:  One or more files were copied successfully (that is, new files have arrived).
     
     backup of configuration OK
@@ -1277,7 +1257,7 @@ The C<waitdrive> option is useful when dealing with network shares or external d
     my $bkp=Win32::Backup::Robocopy->new( 
                                           name => 'test', 
                                           src  => '.',
-                                          dst  => 'H:/test',     # drive H: is unplagged
+                                          dst  => 'H:/bkp',     # drive H: is unplagged
                                           waitdrive => 1         # force asking the user
     ); 
 	
@@ -1286,14 +1266,14 @@ The C<waitdrive> option is useful when dealing with network shares or external d
     # output:
 	
     Backup of:     D:\my_current\dir
-    To:            H:\test\test
+    To:            H:\bkp\test
     Waiting for drive H: to be available..
     (press ENTER when H: is connected or CTRL-C to terminate the program)
 	
     # I press enter before plugging the drive..
 	
     Backup of:     D:\my_current\dir
-    To:            H:\test\test
+    To:            H:\bkp\test
     Waiting for drive H: to be available..
     (press ENTER when H: is connected or CTRL-C to terminate the program)
 
@@ -1319,7 +1299,8 @@ The C<JOB> mode is mainly intended to implement scheduled backups using the C<cr
         print "adding jobs..\n";
         
         # a first job for 'documents'
-        $bkp->job(  name=>'documents', 
+        $bkp->job(  
+            name=>'documents', 
             src=> 'c:\DOCS',
             dst  => "x:\\",
             cron =>'* * * * *',
@@ -1327,7 +1308,8 @@ The C<JOB> mode is mainly intended to implement scheduled backups using the C<cr
         );
 				
         # a second job for 'scripts'
-        $bkp->job(  name=>'SCRIPTS', 
+        $bkp->job(  
+            name=>'SCRIPTS', 
             src=> 'c:\perl\scripts',
             dst  => 'x:\\',
             cron=>'* * * * *',
