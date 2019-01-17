@@ -695,14 +695,9 @@ sub _is_safe{
 
 __DATA__
 
-
-
-
-
 =head1 NAME
 
 Win32::Backup::Robocopy - a simple backup solution using robocopy
-
 
 =cut
 
@@ -713,24 +708,24 @@ Win32::Backup::Robocopy - a simple backup solution using robocopy
     # RUN mode 
     my $bkp = Win32::Backup::Robocopy->new(
             name 	=> 'my_perl_archive',        
-            source	=> 'x:\scripts',             
-            history	=> 1                         
+            source	=> 'c:\scripts',
+            destination	=> 'x:\backup',
+            history	=> 1,                         
     );
     my( $stdout, $stderr, $exit, $exitstr, $createdfolder ) = $bkp->run();
 
 	
     # JOB mode 
-    my $bkp = Win32::Backup::Robocopy->new( configuration => './my_conf.json' );
+    my $bkp = Win32::Backup::Robocopy->new( configuration => './backup_conf.json' );
     $bkp->job( 	
-                name=>'my_backup_name',          
-                src=>'./a_folder',               
-                history=>1,                      
-				
-                cron=>'0 0 25 12 *',             
-                first_time_run=>1                
+                name => 'my_backup_name',          
+                src  =>'./a_folder',
+                dst  => 'y:/',				
+                history => 1,			
+                cron => '0 0 25 12 *',             
+                first_time_run => 1,                
     );
-    $bkp->runjobs;              
-
+    $bkp->runjobs;     
 
 
 
