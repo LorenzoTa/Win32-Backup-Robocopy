@@ -3,7 +3,11 @@ use strict;
 use warnings;
 use ExtUtils::MakeMaker;
 
-os_unsupported unless $^O eq 'MSWin32';
+BEGIN{
+	unless ( $^O =~ /MSWin32|cygwin/i ){
+		die "OS $^O unsupported!"; 
+	}
+}
 
 WriteMakefile(
     NAME             => 'Win32::Backup::Robocopy',
@@ -14,7 +18,7 @@ WriteMakefile(
     PL_FILES         => {},
     MIN_PERL_VERSION => '5.010',
     CONFIGURE_REQUIRES => {
-         'ExtUtils::MakeMaker' => 7.26
+        'ExtUtils::MakeMaker' => '0',
     },
     BUILD_REQUIRES => {
         
