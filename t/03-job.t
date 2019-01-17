@@ -35,16 +35,16 @@ dies_ok { $bkp->job } 'job method expected to die without a name, a source and a
 dies_ok { $bkp->job(src=>'.',cron=>'0 0 25 1 *') } 'job method  expected to die without a name';
 
 # job dies unless crontab is given
-dies_ok { $bkp->job(src=>'.',name=>'test') } 'job method  expected to die without a crontab string';
+dies_ok { $bkp->job(src=>'x:\\',name=>'test') } 'job method  expected to die without a crontab string';
 
 # job dies unless source is given
 dies_ok { $bkp->job(cron=>'0 0 25 1 *',name=>'test') } 'job method  expected to die without a source';
 
 # job dies with an incorrect cronatb
-dies_ok { $bkp->job(cron=>'0 0 25 X X',src=>'.',name=>'test') } 'job method  expected to die with an invalid crontab';
+dies_ok { $bkp->job(cron=>'0 0 25 X X',src=>'x:\\',name=>'test') } 'job method  expected to die with an invalid crontab';
 
 # a correct invocation
-$bkp->job(name=>'test',src=>'.',cron=>'0 0 25 1 *');
+$bkp->job(name=>'test',src=>'x:/',cron=>'0 0 25 1 *');
 
 
 # jobs queue has one element

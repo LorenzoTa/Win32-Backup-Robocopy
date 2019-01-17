@@ -28,7 +28,7 @@ my ($out, $err, @res) = capture {
 $nobkp = Win32::Backup::Robocopy->new( 
 	name => 'impos??????sible',
 	verbose => 1,
-	src	 => '.',
+	src	 => 'x:/',
 	dst => '.', 
 );
 ($out, $err, @res) = capture {

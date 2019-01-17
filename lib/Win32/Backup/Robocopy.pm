@@ -10,7 +10,7 @@ use JSON::PP; # only this support sort_by(custom_func)
 use Capture::Tiny qw(capture);
 use DateTime::Tiny;
 use Algorithm::Cron;
-our $VERSION = 6;
+our $VERSION = 7;
 
 sub new {
 	my $class = shift;
@@ -113,14 +113,16 @@ sub run	{
 						( $opt{emptysubfolders} ? '/E' : undef ),
 						( $opt{archive} ? '/A' : undef ),
 						( $opt{archiveremove} ? '/M' : undef ),
-						( $opt{noprogress} ? '/NP' : undef ),
+						#( $opt{noprogress} ? '/NP' : undef ),
+						( $opt{retries} ? "/R:$opt{retries}" : "/R:0" ),
+						( $opt{wait} ? "/W:$opt{wait}" : "/W:0" ),
 						# extra parameters for robocopy
 						@extra;
-	# verbosity
-	if ( $self->{verbose} ){
-		print "executing [robocopy.exe ",(join ' ', @cmdargs),"]\n";
-	}	
-	my ($stdout, $stderr, $exit, $exitstr) = _wrap_robocpy( @cmdargs );
+	# # verbosity
+	# if ( $self->{verbose} ){
+		# print "executing [robocopy.exe ",(join ' ', @cmdargs),"]\n";
+	# }	
+	my ($stdout, $stderr, $exit, $exitstr) = $self->_wrap_robocpy( @cmdargs );
 	# verbosity
 	if ( $self->{verbose} ){
 		print "STDOUT: $stdout\n" if $self->{verbose} > 1;
@@ -231,7 +233,7 @@ sub runjobs{
 				subfolders => $job->{subfolders},
 				emptysubfolders => $job->{emptysubfolders},
 				files => $job->{files},
-				noprogress => $job->{noprogress},				
+				#noprogress => $job->{noprogress},				
 			);
 			# updating next_time* in the job
 			my $cron = _get_cron( $job->{ cron } );
@@ -253,7 +255,7 @@ sub listjobs{
 	$arg{format} //= 'compact';
 	$arg{fields} //= [qw( name src dst files history cron next_time next_time_descr
 							first_time_run archive archiveremove subfolders emptysubfolders
-							noprogress waitdrive verbose debug)];
+							 waitdrive verbose debug)];
 							
 	unless ( wantarray ){ return scalar @{$self->{jobs}} }
 	my @res;
@@ -284,6 +286,8 @@ sub restore{
 				$_ 										:
 				File::Spec->rel2abs( $_ ) ;
 	} $arg{from}, $arg{to};
+	# checks against deep recursion
+	_is_safe( $arg{from}, $arg{to} );
 	# check source directory
 	croak "'from' parameter points to a non existing directory!" unless -d $arg{from};
 	# check and create destination directory
@@ -302,7 +306,7 @@ sub restore{
 	my @extra =  ref $arg{extraparam} eq 'ARRAY' 	?
 					@{ $arg{extraparam} }			:
 					split /\s+/, $arg{extraparam} // ''	;
-	my @robo_params = ( '*.*', '/E', '/DCOPY:T', '/SEC', '/NP', @extra );
+	my @robo_params = ( '*.*', '/E', '/DCOPY:T', '/SEC', '/R:0', '/W:0', @extra );
 	# build parameters to ROBOCOPY using some default and extraparam
 	# check if it is a restore from a history backup
 	opendir my $dirh, $arg{from} or croak "unable to open dir [$arg{from}] to read";
@@ -350,11 +354,11 @@ sub restore{
 			$src = File::Spec->catdir($arg{from},$src);
 			print "restoring from [$src]\n" if $arg{verbose};
 			my @cmdargs = ( $src, $arg{to}, @robo_params );
-			# verbosity
-			if ( $self->{verbose} ){
-				print "executing [robocopy.exe ",(join ' ', @cmdargs),"]\n";
-			}
-			my ($stdout, $stderr, $exit, $exitstr) = _wrap_robocpy( @cmdargs );
+			# # verbosity
+			# if ( $self->{verbose} ){
+				# print "executing [robocopy.exe ",(join ' ', @cmdargs),"]\n";
+			# }
+			my ($stdout, $stderr, $exit, $exitstr) = $self->_wrap_robocpy( @cmdargs );
 			# verbosity
 			if ( $self->{verbose} > 1 ){
 				print "STDOUT: $stdout\n" if $self->{verbose} > 1;
@@ -371,11 +375,11 @@ sub restore{
 	# NORMAL (non history) restore
 	else{
 		my @cmdargs = ( $arg{from}, $arg{to}, @robo_params );
-		# verbosity
-		if ( $self->{verbose} ){
-			print "executing [robocopy.exe ",(join ' ', @cmdargs),"]\n";
-		}
-		my ($stdout, $stderr, $exit, $exitstr) = _wrap_robocpy( @cmdargs );
+		# # verbosity
+		# if ( $self->{verbose} ){
+			# print "executing [robocopy.exe ",(join ' ', @cmdargs),"]\n";
+		# }
+		my ($stdout, $stderr, $exit, $exitstr) = $self->_wrap_robocpy( @cmdargs );
 		# verbosity
 		if ( $self->{verbose} > 1 ){
 			print "STDOUT: $stdout\n" if $self->{verbose} > 1;
@@ -395,9 +399,20 @@ sub restore{
 ##################################################################
 
 sub _wrap_robocpy{
+	my $self = shift;
 	my @cmdargs = @_;
+	# set safest parameters always!!
+	# /256 : Turn off very long path (> 256 characters) support
+	# this is very risky if unset and can lead to deep directory
+	# structure that the user cannot delete anymore.
+	# /NP : No Progress - don’t display % copied.
+	my @safest = qw( /256 /NP );
+	# verbosity
+	if ( $self->{verbose} ){
+		print "executing [robocopy.exe ",(join ' ', @cmdargs, @safest),"]\n";
+	}
 	my ($stdout, $stderr, $exit) = capture {
-		system( 'ROBOCOPY.EXE', @cmdargs );
+		system( 'ROBOCOPY.EXE', @cmdargs, @safest );
 	};
 	# !!
 	$exit = $exit>>8;
@@ -524,7 +539,7 @@ sub _load_conf{
 	croak "not an ARRAY ref retrieved from $file as conteainer for jobs! wrong configuration" 
 			unless ref $data eq 'ARRAY';
 	my @check = qw( name src dst files history cron next_time next_time_descr first_time_run archive
-				archiveremove subfolders emptysubfolders noprogress verbose debug waitdrive);
+				archiveremove subfolders emptysubfolders verbose debug waitdrive wait retries);
 	my $count = 1;
 	foreach my $job ( @$data ){
 		croak "not a HASH ref retrieved from $file for job $count! wrong configuration" 
@@ -596,9 +611,9 @@ sub _ordered_json{
 			archiveremove=> 9,	 # run
 			subfolders=> 10,	 # run
 			emptysubfolders=> 11,# run
-			noprogress=> 12,	 # run		
+			#noprogress=> 12,	 # run		
 			
-			waitdrive => 12.5,	# new
+			waitdrive => 12,	# new
 			verbose	=> 13, 		# new
 			debug	=>	15, 	# new
 	);
@@ -626,10 +641,14 @@ sub _default_run_params{
 	# /A : Copy only files with the Archive attribute set.
 	$opt{archive} //= 0;
 	# /M : like /A, but remove Archive attribute from source files.
-	$opt{archiveremove} //= 1;	
+	$opt{archiveremove} //= 1;
+	# /R:n : Number of Retries on failed copies - default is 1 million. 
+	$opt{retries} //= 0;
+	#  /W:n : Wait time between retries - default is 30 seconds.
+	$opt{wait} //= 0;
 	# logging options
     # /NP : No Progress - don’t display % copied.
-	$opt{noprogress} //= 1;
+	#$opt{noprogress} //= 1;
 	return %opt;
 }
 sub _verify_args{
@@ -638,17 +657,69 @@ sub _verify_args{
 	$arg{src} //= $arg{source};
 	croak "backup need a source!" unless $arg{src};
 	$arg{dst} //= $arg{destination} // '.';
-	map { $_ =  File::Spec->file_name_is_absolute( $_ ) ?
-				$_ 										:
+	map { $_ =  #File::Spec->file_name_is_absolute( $_ ) ?
+				#$_ 										:
+				# this will be useful anyway: homegenous path separator, uppercase drives..
 				File::Spec->rel2abs( $_ ) ;
 	} $arg{src}, $arg{dst};
 	carp "backup source [$arg{src}] does not exists!".
 			"(this is only a warning)" unless -d $arg{src};
+	# checks against deep recursion
+	_is_safe( $arg{src}, $arg{dst} );
 	return %arg;	
+}
+
+sub _is_safe{
+	my( $src, $dst ) = @_;
+	# these checks are here to prevent deep recursive copy
+	# possibly leading to unrecoverable directory structure
+	# this is enforced even if the /256 switch is added to
+	# every robocopy call.
+	# GIVEN:
+	# E:\
+	# └───path
+	#		  conf.txt
+    #	
+	# GOOD BUT INUTILE:
+	# robocopy.exe E:\path E:\path *.* /E /NP /W:0  /R:0 /256
+	# gives:
+	# E:\
+	# └───path
+	#		  conf.txt
+	#
+	# NOT SO GOOD:
+	# 1) robocopy.exe E:\path E:\path\BKP *.* /E /NP /W:0  /R:0
+	# gives:
+	# E:\
+	# └───path
+	#	  │   conf.txt
+	#	  │
+	#	  └───BKP
+	#		  │   conf.txt
+	#		  │
+	#		  └───BKP
+	#			  conf.txt
+	#
+	# BAD (DEEP RECURSION)
+	# 1) robocopy.exe E:\path E:\path\BKP\ANOTHER_LEVEL *.* /E /NP /W:0  /R:0 /256
+	# 2) robocopy.exe E:\path E:\path\BKP\ANOTHER_LEVEL\____AND_ANOTHER *.* /E /NP /W:0  /R:0 /256
+	if ( $dst =~ /^\Q$src\E$/i ){
+		carp "SRC and DST are equal! This might be not what you intended."
+	}
+	elsif ( $dst =~ /^\Q$src\E./i ){
+		croak "DST [$dst] is under SRC [$src]!\n".
+				"this is will lead to a recursive copy of of SRC, or at least ".
+				"to an unexpected or unwanted directory structure."
+	}
+	else{ return }	
 }
 1;
 
 __DATA__
+
+
+
+
 
 =head1 NAME
 
@@ -757,6 +828,34 @@ a first time without checking the cron scheduling, ie at the firt invocation of 
 	
     $bkp->runjobs;              
 
+
+	
+	
+=head2 robocopy used defaults
+
+The C<robocopy.exe> program is full of options. This module is aimed to facilitate the backup task and so it assume some defaults. Every call to C<robocopy.exe> made by C<run> and C<runjobs> if nothing is specified will result in:
+
+
+    robocopy.exe SOURCE DESTINATION *.* /E /M /R:0 /W:0 /256 /NP
+
+	
+Apart from source and destination, first five parameters can be modified during the C<run> call (see below the method desciption for details). 
+Last two switches will be present anyway: C</NP> eliminates the progress bar that can show the copied percentage and it is not useful as the module will collect all the output from the command.
+
+More important is the C</256> switch that disable the discutible feature permitting C<robocopy> to create folders with more than 256 characters in the path (the OS has a treshold of 260). 
+Without this switch, an eventual erroneous invocation can lead to a folder structure very difficult
+to remove because the explorer subsystem is not even able to remove nor rename it. Even specialized tools can fail ( booting Linux live distro and good old C<rm -rf> can help though ;). Even if other checks in the module are to prevent such bad results the switch will be always present.
+
+by other hand, if nothing is specified, every call of the C<restore> method will result in:
+
+    robocopy.exe SOURCE DESTINATION *.* /E /DCOPY:T /SEC /R:0 /W:0 /256 /NP
+	
+with the important difference respect to archive bit that are not looked for nor reset.
+
+=head2 about verbosity
+
+Verbosity of the module can vary from C<0> (default value, no outptut at all) to C<2> giving lot of informations and dumping jobs and configuration. 
+The C<verbose> parameter can be set in the main backup object during the construction made by C<new>  and in this case will be inherited by all other methods. But C<run> C<job> C<runjobs> and C<restore> methods can be feed too with a C<verbose> parameter that will be in use only during the call.
 
 =head1 METHODS (RUN mode)
 
@@ -873,15 +972,15 @@ C<emptysubfolders> defaults to 1 and will set the C</E> ( copy subfolders, inclu
 
 =item 
 
-C<noprogress> defaults to 1 and will set the C</NP> ( no progress - do not display % copied ) robocopy switch
+C<retries> defaults to 0 and will set the C</R:N> (number of retries on error on file) robocopy switch
+
+=item 
+
+C<wait> defaults to 0 and will set the C</W:N> (seconds between retries) robocopy switch
 
 =item 
 
 C<extraparam> defaults to undef and can be used to pass any valid option to robocopy (see below)
-
-=item 
-
-C<verbose> defaults to what was defined in the construction of the backup obkect. Can be explicitally set during C<run> method call.
 
 =back
 
