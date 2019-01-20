@@ -12,6 +12,15 @@ use DateTime::Tiny;
 use Algorithm::Cron;
 our $VERSION = 7;
 
+BEGIN{
+	if( $ENV{PERL_ROBOCOPY_EXE} ){
+		my $robo = File::Spec->rel2abs( $ENV{PERL_ROBOCOPY_EXE} );
+		die "$robo does not exists!" unless -e $robo;
+		die "$robo is not executable!" unless -x $robo;
+		
+	}
+}
+
 sub new {
 	my $class = shift;
 	my %arg = _default_new_params( @_ );

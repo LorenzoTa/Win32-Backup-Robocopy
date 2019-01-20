@@ -6,8 +6,8 @@ use Test::More;
 use Test::Exception;
 use Capture::Tiny qw(capture);
 
-# use ok
-use_ok( 'Win32::Backup::Robocopy' ) || print "Bail out!\n";  
+# # use ok
+# use_ok( 'Win32::Backup::Robocopy' ) || print "Bail out!\n";  
 
 note( "Testing Win32::Backup::Robocopy with Perl $]" ); 
 # show version of used modules
@@ -20,6 +20,22 @@ map{ note( join ' ',$_,($_->VERSION // '?' ) ) }
 	'DateTime::Tiny',
 	
 ;
+# # testing ENV
+# BEGIN{
+	
+# $ENV{PERL_ROBOCOPY_EXE} = 'c:\robocopy.exe';
+
+	# # my($out, $err, @res) = capture { require Win32::Backup::Robocopy };
+	# # print "[$out]\n";
+	# dies_ok { require Win32::Backup::Robocopy } 
+		# 'expected to die with not existent executable';	
+	# delete $ENV{PERL_ROBOCOPY_EXE};
+	# use Data::Dump; dd \%ENV; dd \@INC;
+# }
+
+# use ok
+use_ok( 'Win32::Backup::Robocopy' ) || print "Bail out!\n";  
+
 # object of proper class
 isa_ok( Win32::Backup::Robocopy->new( name => 'zero', source =>'X:/'), 'Win32::Backup::Robocopy' );
 
