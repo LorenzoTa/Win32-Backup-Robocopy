@@ -301,7 +301,7 @@ sub restore{
 	my @extra =  ref $arg{extraparam} eq 'ARRAY' 	?
 					@{ $arg{extraparam} }			:
 					split /\s+/, $arg{extraparam} // ''	;
-	my @robo_params = ( '*.*', '/E', '/DCOPY:T', '/SEC', '/R:0', '/W:0', @extra );
+	my @robo_params = ( '*.*', '/S', '/E', '/DCOPY:T', '/SEC', '/R:0', '/W:0', @extra );
 	# build parameters to ROBOCOPY using some default and extraparam
 	# check if it is a restore from a history backup
 	opendir my $dirh, $arg{from} or croak "unable to open dir [$arg{from}] to read";
@@ -620,7 +620,7 @@ sub _default_run_params{
 	$opt{files} //= '*.*',	
 	# source options
 	# /S : Copy Subfolders.
-	$opt{subfolders} //= 0;
+	$opt{subfolders} //= 1;
 	# /E : Copy Subfolders, including Empty Subfolders.
 	$opt{emptysubfolders} //= 1;
 	# /A : Copy only files with the Archive attribute set.
@@ -807,10 +807,10 @@ In addition the C<job> method wants a crontab like entry to have the job run onl
 The C<robocopy.exe> program is full of options. This module is aimed to facilitate the backup task and so it assumes some defaults. Every call to C<robocopy.exe> made by C<run> and C<runjobs> if nothing is specified will result in:
 
 
-    robocopy.exe SOURCE DESTINATION *.* /E /M /R:0 /W:0 /NP /256 
+    robocopy.exe SOURCE DESTINATION *.* /S /E /M /R:0 /W:0 /NP /256 
 
 	
-Apart from source and destination, first five parameters can be modified during the C<run> call (see below the method desciption for details). 
+Apart from source and destination, first six parameters can be modified during the C<run> call (see below the method description for details). 
 Last two switches will be present anyway: C</NP> eliminates the progress bar that can show the copied percentage and that it is not useful as the module will collect all the output from the command.
 
 More important is the C</256> switch that disable the discutible feature permitting C<robocopy> to create folders with more than 256 characters in the path (the OS has a treshold of 260). 
@@ -820,7 +820,7 @@ Even specialized tools can fail ( booting Linux live distro and good old C<rm -r
 
 By other hand, if nothing is specified, every call of the C<restore> method will result in:
 
-    robocopy.exe SOURCE DESTINATION *.* /E /DCOPY:T /SEC /R:0 /W:0 /NP /256 
+    robocopy.exe SOURCE DESTINATION *.* /S /E /DCOPY:T /SEC /R:0 /W:0 /NP /256 
 	
 with the important difference respect to archive bit that are not looked for nor reset.
 
@@ -926,7 +926,7 @@ C<archiveremove> defaults to 1 and will set the C</M> ( like C</A>, but remove a
 
 =item 
 
-C<subfolders> defaults to 0 and will set the C</S> if 1 ( copy subfolders ) robocopy switch
+C<subfolders> defaults to 1 and will set the C</S> if 1 ( copy subfolders ) robocopy switch
 
 =item 
 
@@ -1126,7 +1126,7 @@ Pay attention to what is said in the L<DateTime::Tiny> documentation about time 
     gmtime:    Sun Jan  6 20:29:10 2019
 
 
-The C<restore> method will execute a C<robocopy.exe> call with defaut arguments C<'*.*', '/E', '/DCOPY:T', '/SEC', '/NP' '/256'> but you can pass other ones using the C<extraparam> parameter being it a string or an array reference with a list of valid C<robocopy.exe> parameters.
+The C<restore> method will execute a C<robocopy.exe> call with defaut arguments C<'*.*', '/S', '/E', '/DCOPY:T', '/SEC', '/NP' '/256'> but you can pass other ones using the C<extraparam> parameter being it a string or an array reference with a list of valid C<robocopy.exe> parameters.
 
 Both history and normal restore can output more informations if C<verbose> is set in the main backup object or if it is passed in directly during the C<restore> method call.
 
@@ -1164,7 +1164,7 @@ Will produce the following configuration:
       "first_time_run" : 0,
       "archive" : 0,
       "archiveremove" : 1,
-      "subfolders" : 0,
+      "subfolders" : 1,
       "emptysubfolders" : 1,
       "noprogress" : 1,
       "waitdrive" : 0,
@@ -1236,7 +1236,7 @@ And this will add following lines to your program:
     backup SRC: [c:\path\to\conf]
     backup DST: [x:\conf_bkp\2019-01-11T23-11-09]
     mkdir x:\conf_bkp\2019-01-11T23-11-09
-    executing [robocopy.exe c:\path\to\conf x:\conf_bkp\2019-01-11T23-11-09 *.* /E /M /NP]
+    executing [robocopy.exe c:\path\to\conf x:\conf_bkp\2019-01-11T23-11-09 *.* /S /E /M /NP]
     robocopy.exe exit description:  One or more files were copied successfully (that is, new files have arrived).
     
     backup of configuration OK
