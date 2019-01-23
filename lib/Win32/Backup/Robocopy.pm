@@ -934,11 +934,11 @@ C<emptysubfolders> defaults to 1 and will set the C</E> ( copy subfolders, inclu
 
 =item 
 
-C<retries> defaults to 0 and will set the C</R:N> if N (number of retries on error on file) robocopy switch
+C<retries> defaults to 0 and will set the C</R:0> or N if specified (number of retries on error on file) robocopy switch
 
 =item 
 
-C<wait> defaults to 0 and will set the C</W:N> if N (seconds between retries) robocopy switch
+C<wait> defaults to 0 and will set the C</W:0> or N if specified (seconds between retries) robocopy switch
 
 =item 
 
