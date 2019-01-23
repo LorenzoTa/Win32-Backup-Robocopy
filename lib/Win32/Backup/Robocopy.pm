@@ -1126,7 +1126,7 @@ Pay attention to what is said in the L<DateTime::Tiny> documentation about time 
     gmtime:    Sun Jan  6 20:29:10 2019
 
 
-The C<restore> method will execute a C<robocopy.exe> call with defaut arguments C<'*.*', '/E', '/DCOPY:T', '/SEC', '/NP' '/256'> but you can pass other ones using the C<extraparam> parameter being it a string or an array reference with a list of valid C<robocopy.exe> parameters.
+The C<restore> method will execute a C<robocopy.exe> call with defaut arguments C<'*.*', '/S', '/E', '/DCOPY:T', '/SEC', '/NP' '/256'> but you can pass other ones using the C<extraparam> parameter being it a string or an array reference with a list of valid C<robocopy.exe> parameters.
 
 Both history and normal restore can output more informations if C<verbose> is set in the main backup object or if it is passed in directly during the C<restore> method call.
 
@@ -1236,7 +1236,7 @@ And this will add following lines to your program:
     backup SRC: [c:\path\to\conf]
     backup DST: [x:\conf_bkp\2019-01-11T23-11-09]
     mkdir x:\conf_bkp\2019-01-11T23-11-09
-    executing [robocopy.exe c:\path\to\conf x:\conf_bkp\2019-01-11T23-11-09 *.* /E /M /NP]
+    executing [robocopy.exe c:\path\to\conf x:\conf_bkp\2019-01-11T23-11-09 *.* /S /E /M /NP]
     robocopy.exe exit description:  One or more files were copied successfully (that is, new files have arrived).
     
     backup of configuration OK
