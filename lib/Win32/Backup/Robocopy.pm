@@ -250,6 +250,7 @@ sub listjobs{
 	$arg{format} //= 'compact';
 	$arg{fields} //= [qw( name src dst files history cron next_time next_time_descr
 							first_time_run archive archiveremove subfolders emptysubfolders
+							retries wait
 							 waitdrive verbose )];
 							
 	unless ( wantarray ){ return scalar @{$self->{jobs}} }
@@ -599,8 +600,8 @@ sub _ordered_json{
 			subfolders=> 10,	 # run
 			emptysubfolders=> 11,# run
 			
-			retries  => 12,
-			wait => 13,
+			retries  => 12,      # run
+			wait => 13,          # run
 			
 			waitdrive => 14,	# new
 			verbose	=> 15, 		# new
