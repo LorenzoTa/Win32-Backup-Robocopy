@@ -29,7 +29,7 @@ sub new {
 				conf 		=> $arg{conf} ,
 				jobs 		=> $jobs // [],
 				verbose 	=> $arg{verbose},
-				debug		=> $arg {debug},
+				#debug		=> $arg {debug},
 				#writelog	=> $arg {writelog},
 			}, $class;	
 	}
@@ -42,7 +42,7 @@ sub new {
 				dst 		=> $arg{dst},
 				history 	=> $arg{history} // 0,
 				verbose 	=> $arg{verbose} // 0,
-				debug		=> $arg{debug} // 0,
+				#debug		=> $arg{debug} // 0,
 				waitdrive	=> $arg{waitdrive} // 0,
 				#writelog	=> $arg {writelog} // 1,
 	}, $class;
@@ -186,7 +186,7 @@ sub job {
 	}
 	# clean the main object of other (now unwanted) properties
 	$self->_write_conf;
-	map{ delete $self->{$_} }qw( name src dst history debug verbose );
+	map{ delete $self->{$_} }qw( name src dst history verbose );
 }
 
 sub runjobs{
@@ -217,7 +217,7 @@ sub runjobs{
 				dst 		=> $job->{dst},
 				history 	=> $job->{history} // 0,
 				verbose 	=> $job->{verbose} // 0,
-				debug		=> $job->{debug} // 0,
+				#debug		=> $job->{debug} // 0,
 				waitdrive	=> $job->{waitdrive} // 0,
 				#writelog	=> $job->{writelog} // 1,
 			},ref $self;
@@ -250,7 +250,7 @@ sub listjobs{
 	$arg{format} //= 'compact';
 	$arg{fields} //= [qw( name src dst files history cron next_time next_time_descr
 							first_time_run archive archiveremove subfolders emptysubfolders
-							 waitdrive verbose debug)];
+							 waitdrive verbose )];
 							
 	unless ( wantarray ){ return scalar @{$self->{jobs}} }
 	my @res;
@@ -526,7 +526,7 @@ sub _load_conf{
 	croak "not an ARRAY ref retrieved from $file as conteainer for jobs! wrong configuration" 
 			unless ref $data eq 'ARRAY';
 	my @check = qw( name src dst files history cron next_time next_time_descr first_time_run archive
-				archiveremove subfolders emptysubfolders verbose debug waitdrive wait retries);
+				archiveremove subfolders emptysubfolders verbose waitdrive wait retries);
 	my $count = 1;
 	foreach my $job ( @$data ){
 		croak "not a HASH ref retrieved from $file for job $count! wrong configuration" 
@@ -599,9 +599,12 @@ sub _ordered_json{
 			subfolders=> 10,	 # run
 			emptysubfolders=> 11,# run
 			
-			waitdrive => 12,	# new
-			verbose	=> 13, 		# new
-			debug	=>	15, 	# new
+			retries  => 12,
+			wait => 13,
+			
+			waitdrive => 14,	# new
+			verbose	=> 15, 		# new
+			#debug	=>	15, 	# new
 	);
 	($order{$JSON::PP::a} // 99) <=> ($order{$JSON::PP::b} // 99)
 }
@@ -609,7 +612,7 @@ sub _default_new_params{
 	my %opt = @_;
 	$opt{history} //= 0;
 	$opt{verbose} //= 0;
-	$opt{debug} //= 0;
+	#$opt{debug} //= 0;
 	$opt{waitdrive} //= 0;
 	return %opt;
 }
@@ -1166,10 +1169,10 @@ Will produce the following configuration:
       "archiveremove" : 1,
       "subfolders" : 1,
       "emptysubfolders" : 1,
-      "noprogress" : 1,
+      "retries" : 0,
+      "wait" : 0,
       "waitdrive" : 0,
-      "verbose" : 0,
-      "debug" : 0
+      "verbose" : 0
      }
   ]
 
