@@ -1046,6 +1046,14 @@ If, by other hand, the file does not exists,  C<new> does not complain, assuming
 
 =head2 job
 
+    $bkp->job( 
+        name => 'documents',
+        src  => 'e:\me\docs',
+        dst  => 'x:\my_backups'		
+        cron => '0 0 25 12 *',
+    );
+
+
 This method will push job in the queue. It accepts all parameters of the C<new> and the C<run> methods described in RUN mode above.
 Infact a job, when run, will instantiate a new backup object and will run it via the C<run> method.
 
