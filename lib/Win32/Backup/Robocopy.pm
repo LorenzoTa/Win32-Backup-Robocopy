@@ -302,7 +302,7 @@ sub restore{
 	my @extra =  ref $arg{extraparam} eq 'ARRAY' 	?
 					@{ $arg{extraparam} }			:
 					split /\s+/, $arg{extraparam} // ''	;
-	my @robo_params = ( '*.*', '/S', '/E', '/DCOPY:T', '/SEC', '/R:0', '/W:0', @extra );
+	my @robo_params = ( '*.*', '/S', '/E', '/R:0', '/W:0', @extra ); #'/DCOPY:T', '/SEC',
 	# build parameters to ROBOCOPY using some default and extraparam
 	# check if it is a restore from a history backup
 	opendir my $dirh, $arg{from} or croak "unable to open dir [$arg{from}] to read";
