@@ -274,7 +274,8 @@ sub listjobs{
 
 sub restore{
 	my $self = shift;
-	my %arg = @_;
+	#my %arg = @_;
+	my %arg = _default_restore_params(@_);
 	for ( 'from', 'to' ){
 		croak "restore need a $_ param!" unless $arg{$_};
 	}
@@ -302,7 +303,20 @@ sub restore{
 	my @extra =  ref $arg{extraparam} eq 'ARRAY' 	?
 					@{ $arg{extraparam} }			:
 					split /\s+/, $arg{extraparam} // ''	;
-	my @robo_params = ( '*.*', '/S', '/E', '/R:0', '/W:0', @extra ); #'/DCOPY:T', '/SEC',
+	#my @robo_params = ( '*.*', '/S', '/E', '/R:0', '/W:0', @extra ); #'/DCOPY:T', '/SEC',
+	my @robo_params = grep { defined $_ } 
+						# parameters managed by new
+						#$src, $dst,
+						# parameters managed by run
+						$arg{files},
+						( $arg{subfolders} ? '/S' : undef ),
+						( $arg{emptysubfolders} ? '/E' : undef ),
+						( $arg{archive} ? '/A' : undef ),
+						( $arg{archiveremove} ? '/M' : undef ),
+						( $arg{retries} ? "/R:$arg{retries}" : "/R:0" ),
+						( $arg{wait} ? "/W:$arg{wait}" : "/W:0" ),
+						# extra parameters for robocopy
+						@extra;
 	# build parameters to ROBOCOPY using some default and extraparam
 	# check if it is a restore from a history backup
 	opendir my $dirh, $arg{from} or croak "unable to open dir [$arg{from}] to read";
@@ -637,6 +651,28 @@ sub _default_run_params{
 	$opt{wait} //= 0;
 	return %opt;
 }
+sub _default_restore_params{
+	my %opt = @_;
+	# process received options
+	# file options
+	$opt{files} //= '*.*',	
+	# source options
+	# /S : Copy Subfolders.
+	$opt{subfolders} //= 1;
+	# /E : Copy Subfolders, including Empty Subfolders.
+	$opt{emptysubfolders} //= 1;
+	# /A : Copy only files with the Archive attribute set.
+	$opt{archive} //= 0;
+	# /M : like /A, but remove Archive attribute from source files.
+	# THIS IS THE ONLY DIFFERENCE WITH _default_run_params
+	# IE ARCHIVE BIT IS NOT LOOKED FOR NOR REMOVED
+	$opt{archiveremove} //= 0;
+	# /R:n : Number of Retries on failed copies - default is 1 million. 
+	$opt{retries} //= 0;
+	#  /W:n : Wait time between retries - default is 30 seconds.
+	$opt{wait} //= 0;
+	return %opt;
+}
 sub _verify_args{
 	my %arg = @_;
 	croak "backup need a name!" unless $arg{name};
@@ -722,11 +758,11 @@ Win32::Backup::Robocopy - a simple backup solution using robocopy
     # JOB mode 
     my $bkp = Win32::Backup::Robocopy->new( configuration => './backup_conf.json' );
     $bkp->job( 	
-                name => 'my_backup_name',          
-                src  =>'./a_folder',
-                dst  => 'y:/',				
+                name => 'my_backup_name',         # mandatory          
+                src  =>'./a_folder',              # mandatory
+                dst  => 'y:/',                    # '.' if not specified				
                 history => 1,			
-                cron => '0 0 25 12 *',             
+                cron => '0 0 25 12 *',            # mandatory             
                 first_time_run => 1,                
     );
     $bkp->runjobs;     
@@ -828,6 +864,8 @@ By other hand, if nothing is specified, every call of the C<restore> method will
 	
 with the only but important difference in respect to archive bit that are not looked for nor reset ( no C</M> switch passed ).
 
+Please note that C<robocopy.exe> will use by default C</COPY:DAT> ie will copy data, attributes and timestamp.
+
 =head2 about verbosity
 
 Verbosity of the module can vary from C<0> (default value, no outptut at all) to C<2> giving lot of informations and dumping jobs and configuration. 
@@ -870,7 +908,7 @@ The C<new> method does not do any check against destination folders existence; i
 The module provides a mechanism to spot unavailable destination drive and ask the user to connect it. 
 If you specify C<waitdrive =E<gt> 1> during the object construction then the program will not die when the drive specified as destination is not present. Instead it opens a prompt asking the user to connect the appropriate drive to continue. The deafult value of C<waitdrive> is 0 ie. the program will die if the drive is unavailable and creation of the destination folder impossible.
 
-To wait for the drive is useful in case of backups with destination, let's say, an USB drive: see L<EXMPLES> section.
+To wait for the drive is useful in case of backups with destination, let's say, an USB drive: see the L</"backup to external drive"> example.
 
 Overview of parameters accepted by C<new> and their defaults:
 
@@ -1008,6 +1046,14 @@ If, by other hand, the file does not exists,  C<new> does not complain, assuming
 
 =head2 job
 
+    $bkp->job( 
+        name => 'documents',
+        src  => 'e:\me\docs',
+        dst  => 'x:\my_backups'		
+        cron => '0 0 25 12 *',
+    );
+
+
 This method will push job in the queue. It accepts all parameters of the C<new> and the C<run> methods described in RUN mode above.
 Infact a job, when run, will instantiate a new backup object and will run it via the C<run> method.
 
@@ -1088,6 +1134,44 @@ This method just needs two parameters: C<from> and C<to> like in:
                     to 	 => 'D:/local/scripts' 
     );
 
+The C<restore> method will accept all parameter concerning C<robocopy> options as the C<run> method does, with the only important difference about archive bit: the default is to ignore it.
+
+=over 
+
+=item 
+
+C<files> defaults to C<*.*>  robocopy will assume all file unless specified: the module passes it explicitly (see below)
+
+=item 
+
+C<archive> defaults to 0 and will set the C</A> if 1 ( copy only files with the archive attribute set ) robocopy switch
+
+=item 
+
+C<archiveremove> defaults to 0 (the only difference in respect of the run method) and will set the C</M> ( like C</A>, but remove archive attribute ) robocopy switch
+
+=item 
+
+C<subfolders> defaults to 1 and will set the C</S> if 1 ( copy subfolders ) robocopy switch
+
+=item 
+
+C<emptysubfolders> defaults to 1 and will set the C</E> ( copy subfolders, including empty subfolders ) robocopy switch
+
+=item 
+
+C<retries> defaults to 0 and will set the C</R:0> or N if specified (number of retries on error on file) robocopy switch
+
+=item 
+
+C<wait> defaults to 0 and will set the C</W:0> or N if specified (seconds between retries) robocopy switch
+
+=item 
+
+C<extraparam> defaults to undef and can be used to pass any valid option to robocopy (see run method)
+
+=back
+
 	
 =head2 history restore
 
@@ -1142,6 +1226,9 @@ element in the array. These array elements are anonymoous hashes with four keys:
 
 
 =head1 CONFIGURATION FILE
+
+While in C<JOB> mode if the configutaion file passed during object contruction contains valid data, such data will be imported into the main ojbect. 
+Each new job added using the C<job> method will be added too and the configuration will be wrote accordingly. This will speed up the backup setup but can also lead in duplicate jobs: see L</"on demand backup in job mode"> example to see how deal with this.
 
 The configuration file holds JSON data into an array each element of the array being a job, contained in a hash.
 Writing to the configuration file done by the present module will maintain the job hash ordered using L<JSON::PP>
@@ -1240,7 +1327,7 @@ And this will add following lines to your program:
     backup SRC: [c:\path\to\conf]
     backup DST: [x:\conf_bkp\2019-01-11T23-11-09]
     mkdir x:\conf_bkp\2019-01-11T23-11-09
-    executing [robocopy.exe c:\path\to\conf x:\conf_bkp\2019-01-11T23-11-09 *.* /S /E /M /NP]
+    executing [robocopy.exe c:\path\to\conf x:\conf_bkp\2019-01-11T23-11-09 *.* /S /E /M /R:0 /W:0 /256 /NP]
     robocopy.exe exit description:  One or more files were copied successfully (that is, new files have arrived).
     
     backup of configuration OK
