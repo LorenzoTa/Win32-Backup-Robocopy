@@ -758,11 +758,11 @@ Win32::Backup::Robocopy - a simple backup solution using robocopy
     # JOB mode 
     my $bkp = Win32::Backup::Robocopy->new( configuration => './backup_conf.json' );
     $bkp->job( 	
-                name => 'my_backup_name',          
-                src  =>'./a_folder',
-                dst  => 'y:/',				
+                name => 'my_backup_name',         # mandatory          
+                src  =>'./a_folder',              # mandatory
+                dst  => 'y:/',                    # '.' if not specified				
                 history => 1,			
-                cron => '0 0 25 12 *',             
+                cron => '0 0 25 12 *',            # mandatory             
                 first_time_run => 1,                
     );
     $bkp->runjobs;     
@@ -864,7 +864,7 @@ By other hand, if nothing is specified, every call of the C<restore> method will
 	
 with the only but important difference in respect to archive bit that are not looked for nor reset ( no C</M> switch passed ).
 
-Please not that C<robocopy.exe> will use by default C</COPY:DAT> ie will copy data, attributes and timestamp.
+Please note that C<robocopy.exe> will use by default C</COPY:DAT> ie will copy data, attributes and timestamp.
 
 =head2 about verbosity
 
@@ -908,7 +908,7 @@ The C<new> method does not do any check against destination folders existence; i
 The module provides a mechanism to spot unavailable destination drive and ask the user to connect it. 
 If you specify C<waitdrive =E<gt> 1> during the object construction then the program will not die when the drive specified as destination is not present. Instead it opens a prompt asking the user to connect the appropriate drive to continue. The deafult value of C<waitdrive> is 0 ie. the program will die if the drive is unavailable and creation of the destination folder impossible.
 
-To wait for the drive is useful in case of backups with destination, let's say, an USB drive: see L<EXMPLES> section.
+To wait for the drive is useful in case of backups with destination, let's say, an USB drive: see the L</"backup to external drive"> example.
 
 Overview of parameters accepted by C<new> and their defaults:
 
@@ -1134,6 +1134,44 @@ This method just needs two parameters: C<from> and C<to> like in:
                     to 	 => 'D:/local/scripts' 
     );
 
+The C<restore> method will accept all parameter concerning C<robocopy> options as the C<run> method does, with the only important difference about archive bit: the default is to ignore it.
+
+=over 
+
+=item 
+
+C<files> defaults to C<*.*>  robocopy will assume all file unless specified: the module passes it explicitly (see below)
+
+=item 
+
+C<archive> defaults to 0 and will set the C</A> if 1 ( copy only files with the archive attribute set ) robocopy switch
+
+=item 
+
+C<archiveremove> defaults to 0 (the only difference in respect of the run method) and will set the C</M> ( like C</A>, but remove archive attribute ) robocopy switch
+
+=item 
+
+C<subfolders> defaults to 1 and will set the C</S> if 1 ( copy subfolders ) robocopy switch
+
+=item 
+
+C<emptysubfolders> defaults to 1 and will set the C</E> ( copy subfolders, including empty subfolders ) robocopy switch
+
+=item 
+
+C<retries> defaults to 0 and will set the C</R:0> or N if specified (number of retries on error on file) robocopy switch
+
+=item 
+
+C<wait> defaults to 0 and will set the C</W:0> or N if specified (seconds between retries) robocopy switch
+
+=item 
+
+C<extraparam> defaults to undef and can be used to pass any valid option to robocopy (see run method)
+
+=back
+
 	
 =head2 history restore
 
@@ -1186,48 +1224,11 @@ The return value of a C<restore> call will be an anonymous array with an element
 if it was a history restore each operation (using a different folder as source) will push an 
 element in the array. These array elements are anonymoous hashes with four keys:  C<stdout>, C<stderr>, C<exit> and C<exitstring> of each operation respectively.
 
-=head2 optional parameter
-
-The C<restore> method will accept all parameter concerning C<robocopy> options as the C<run> method do, with the only important difference about archive bit: the default is to ignore it.
-
-=over 
-
-=item 
-
-C<files> defaults to C<*.*>  robocopy will assume all file unless specified: the module passes it explicitly (see below)
-
-=item 
-
-C<archive> defaults to 0 and will set the C</A> if 1 ( copy only files with the archive attribute set ) robocopy switch
-
-=item 
-
-C<archiveremove> defaults to 0 (the only difference in respect of the run method) and will set the C</M> ( like C</A>, but remove archive attribute ) robocopy switch
-
-=item 
-
-C<subfolders> defaults to 1 and will set the C</S> if 1 ( copy subfolders ) robocopy switch
-
-=item 
-
-C<emptysubfolders> defaults to 1 and will set the C</E> ( copy subfolders, including empty subfolders ) robocopy switch
-
-=item 
-
-C<retries> defaults to 0 and will set the C</R:0> or N if specified (number of retries on error on file) robocopy switch
-
-=item 
-
-C<wait> defaults to 0 and will set the C</W:0> or N if specified (seconds between retries) robocopy switch
-
-=item 
-
-C<extraparam> defaults to undef and can be used to pass any valid option to robocopy (see run method)
-
-=back
-
 
 =head1 CONFIGURATION FILE
+
+While in C<JOB> mode if the configutaion file passed during object contruction contains valid data, such data will be imported into the main ojbect. 
+Each new job added using the C<job> method will be added too and the configuration will be wrote accordingly. This will speed up the backup setup but can also lead in duplicate jobs: see L</"on demand backup in job mode"> example to see how deal with this.
 
 The configuration file holds JSON data into an array each element of the array being a job, contained in a hash.
 Writing to the configuration file done by the present module will maintain the job hash ordered using L<JSON::PP>
@@ -1326,7 +1327,7 @@ And this will add following lines to your program:
     backup SRC: [c:\path\to\conf]
     backup DST: [x:\conf_bkp\2019-01-11T23-11-09]
     mkdir x:\conf_bkp\2019-01-11T23-11-09
-    executing [robocopy.exe c:\path\to\conf x:\conf_bkp\2019-01-11T23-11-09 *.* /S /E /M /NP]
+    executing [robocopy.exe c:\path\to\conf x:\conf_bkp\2019-01-11T23-11-09 *.* /S /E /M /R:0 /W:0 /256 /NP]
     robocopy.exe exit description:  One or more files were copied successfully (that is, new files have arrived).
     
     backup of configuration OK
