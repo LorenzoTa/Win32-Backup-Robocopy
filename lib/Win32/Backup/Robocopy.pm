@@ -864,6 +864,8 @@ By other hand, if nothing is specified, every call of the C<restore> method will
 	
 with the only but important difference in respect to archive bit that are not looked for nor reset ( no C</M> switch passed ).
 
+Please not that C<robocopy.exe> will use by default C</COPY:DAT> ie will copy data, attributes and timestamp.
+
 =head2 about verbosity
 
 Verbosity of the module can vary from C<0> (default value, no outptut at all) to C<2> giving lot of informations and dumping jobs and configuration. 
