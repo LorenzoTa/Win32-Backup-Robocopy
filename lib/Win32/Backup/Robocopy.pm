@@ -1194,7 +1194,7 @@ C<archive> defaults to 0 and will set the C</A> if 1 ( copy only files with the 
 
 =item 
 
-C<archiveremove> defaults to 0 (the only difference in respect of the run method) and will set the C</M> ( like C</A>, but remove archive attribute from source files ) robocopy switch
+C<archiveremove> defaults to 0 (the only difference in respect of the run method) and will set the C</M> ( like C</A>, but remove archive attribute ) robocopy switch
 
 =item 
 
