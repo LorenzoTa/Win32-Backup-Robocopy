@@ -824,7 +824,7 @@ Even specialized tools can fail ( booting Linux live distro and good old C<rm -r
 
 By other hand, if nothing is specified, every call of the C<restore> method will result in:
 
-    robocopy.exe SOURCE DESTINATION *.* /S /E /DCOPY:T /SEC /R:0 /W:0 /NP /256 
+    robocopy.exe SOURCE DESTINATION *.* /S /E /R:0 /W:0 /NP /256 
 	
 with the important difference respect to archive bit that are not looked for nor reset.
 
@@ -1130,7 +1130,7 @@ Pay attention to what is said in the L<DateTime::Tiny> documentation about time 
     gmtime:    Sun Jan  6 20:29:10 2019
 
 
-The C<restore> method will execute a C<robocopy.exe> call with defaut arguments C<'*.*', '/S', '/E', '/DCOPY:T', '/SEC', '/NP' '/256'> but you can pass other ones using the C<extraparam> parameter being it a string or an array reference with a list of valid C<robocopy.exe> parameters.
+The C<restore> method will execute a C<robocopy.exe> call with defaut arguments C<'*.*', '/S', '/E', '/NP' '/256'> but you can pass other ones using the C<extraparam> parameter being it a string or an array reference with a list of valid C<robocopy.exe> parameters.
 
 Both history and normal restore can output more informations if C<verbose> is set in the main backup object or if it is passed in directly during the C<restore> method call.
 
