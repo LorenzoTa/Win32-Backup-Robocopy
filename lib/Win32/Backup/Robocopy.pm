@@ -1180,7 +1180,7 @@ element in the array. These array elements are anonymoous hashes with four keys:
 
 =head2 optional parameter
 
-The C<restore> method will accept all parameter concerning C<robocopy> options as the C<run> method do, with only important difference about archive bit: the default is to ignore it.
+The C<restore> method will accept all parameter concerning C<robocopy> options as the C<run> method do, with the only important difference about archive bit: the default is to ignore it.
 
 =over 
 
