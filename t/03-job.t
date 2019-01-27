@@ -25,8 +25,8 @@ ok ( defined $bkp->{conf}, 'config as alias for conf');
 $bkp = Win32::Backup::Robocopy->new( configuration => File::Spec->catfile($tbasedir,'my_config.json') );
 ok ( defined $bkp->{conf}, 'configuration as alias for conf');
 
-# $bkp has only 4 fields
-ok(keys %$bkp == 4, 'just 4 fields in bkp object');
+# $bkp has only 3 fields
+ok(keys %$bkp == 3, 'just 3 fields in bkp object');
 
 # job dies if nothing is given
 dies_ok { $bkp->job } 'job method expected to die without a name, a source and a cron string';
@@ -53,7 +53,7 @@ ok(@{$bkp->{jobs}} == 1, 'first job correctly pushed into jobs queue');
 # job has taken all defaults from new and run
 foreach my $field (qw( 	name src dst files history archive 
 						archiveremove subfolders emptysubfolders 
-						debug verbose )) {
+						verbose )) {
 	ok(defined ${$bkp->{jobs}}[0]->{$field}, "$field defined in job" );
 }
 
