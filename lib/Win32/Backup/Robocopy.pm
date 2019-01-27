@@ -1178,6 +1178,46 @@ The return value of a C<restore> call will be an anonymous array with an element
 if it was a history restore each operation (using a different folder as source) will push an 
 element in the array. These array elements are anonymoous hashes with four keys:  C<stdout>, C<stderr>, C<exit> and C<exitstring> of each operation respectively.
 
+=head2 optional parameter
+
+The C<restore> method will accept all parameter concerning C<robocopy> options as the C<run> method do, with only important difference about archive bit: the default is to ignore it.
+
+=over 
+
+=item 
+
+C<files> defaults to C<*.*>  robocopy will assume all file unless specified: the module passes it explicitly (see below)
+
+=item 
+
+C<archive> defaults to 0 and will set the C</A> if 1 ( copy only files with the archive attribute set ) robocopy switch
+
+=item 
+
+C<archiveremove> defaults to 0 (the only difference in respect of the run method) and will set the C</M> ( like C</A>, but remove archive attribute from source files ) robocopy switch
+
+=item 
+
+C<subfolders> defaults to 1 and will set the C</S> if 1 ( copy subfolders ) robocopy switch
+
+=item 
+
+C<emptysubfolders> defaults to 1 and will set the C</E> ( copy subfolders, including empty subfolders ) robocopy switch
+
+=item 
+
+C<retries> defaults to 0 and will set the C</R:0> or N if specified (number of retries on error on file) robocopy switch
+
+=item 
+
+C<wait> defaults to 0 and will set the C</W:0> or N if specified (seconds between retries) robocopy switch
+
+=item 
+
+C<extraparam> defaults to undef and can be used to pass any valid option to robocopy (see below)
+
+=back
+
 
 =head1 CONFIGURATION FILE
 
