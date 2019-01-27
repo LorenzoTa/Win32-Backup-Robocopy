@@ -274,7 +274,8 @@ sub listjobs{
 
 sub restore{
 	my $self = shift;
-	my %arg = @_;
+	#my %arg = @_;
+	my %arg = _default_restore_params(@_);
 	for ( 'from', 'to' ){
 		croak "restore need a $_ param!" unless $arg{$_};
 	}
@@ -302,7 +303,20 @@ sub restore{
 	my @extra =  ref $arg{extraparam} eq 'ARRAY' 	?
 					@{ $arg{extraparam} }			:
 					split /\s+/, $arg{extraparam} // ''	;
-	my @robo_params = ( '*.*', '/S', '/E', '/R:0', '/W:0', @extra ); #'/DCOPY:T', '/SEC',
+	#my @robo_params = ( '*.*', '/S', '/E', '/R:0', '/W:0', @extra ); #'/DCOPY:T', '/SEC',
+	my @robo_params = grep { defined $_ } 
+						# parameters managed by new
+						#$src, $dst,
+						# parameters managed by run
+						$arg{files},
+						( $arg{subfolders} ? '/S' : undef ),
+						( $arg{emptysubfolders} ? '/E' : undef ),
+						( $arg{archive} ? '/A' : undef ),
+						( $arg{archiveremove} ? '/M' : undef ),
+						( $arg{retries} ? "/R:$arg{retries}" : "/R:0" ),
+						( $arg{wait} ? "/W:$arg{wait}" : "/W:0" ),
+						# extra parameters for robocopy
+						@extra;
 	# build parameters to ROBOCOPY using some default and extraparam
 	# check if it is a restore from a history backup
 	opendir my $dirh, $arg{from} or croak "unable to open dir [$arg{from}] to read";
@@ -631,6 +645,28 @@ sub _default_run_params{
 	$opt{archive} //= 0;
 	# /M : like /A, but remove Archive attribute from source files.
 	$opt{archiveremove} //= 1;
+	# /R:n : Number of Retries on failed copies - default is 1 million. 
+	$opt{retries} //= 0;
+	#  /W:n : Wait time between retries - default is 30 seconds.
+	$opt{wait} //= 0;
+	return %opt;
+}
+sub _default_restore_params{
+	my %opt = @_;
+	# process received options
+	# file options
+	$opt{files} //= '*.*',	
+	# source options
+	# /S : Copy Subfolders.
+	$opt{subfolders} //= 1;
+	# /E : Copy Subfolders, including Empty Subfolders.
+	$opt{emptysubfolders} //= 1;
+	# /A : Copy only files with the Archive attribute set.
+	$opt{archive} //= 0;
+	# /M : like /A, but remove Archive attribute from source files.
+	# THIS IS THE ONLY DIFFERENCE WITH _default_run_params
+	# IE ARCHIVE BIT IS NOT LOOKED FOR NOR REMOVED
+	$opt{archiveremove} //= 0;
 	# /R:n : Number of Retries on failed copies - default is 1 million. 
 	$opt{retries} //= 0;
 	#  /W:n : Wait time between retries - default is 30 seconds.
