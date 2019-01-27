@@ -826,7 +826,7 @@ By other hand, if nothing is specified, every call of the C<restore> method will
 
     robocopy.exe SOURCE DESTINATION *.* /S /E /R:0 /W:0 /NP /256 
 	
-with the important difference respect to archive bit that are not looked for nor reset.
+with the only but important difference in respect to archive bit that are not looked for nor reset ( no C</M> switch passed ).
 
 =head2 about verbosity
 
