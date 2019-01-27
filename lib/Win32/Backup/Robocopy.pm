@@ -1214,7 +1214,7 @@ C<wait> defaults to 0 and will set the C</W:0> or N if specified (seconds betwee
 
 =item 
 
-C<extraparam> defaults to undef and can be used to pass any valid option to robocopy (see below)
+C<extraparam> defaults to undef and can be used to pass any valid option to robocopy (see run method)
 
 =back
 
