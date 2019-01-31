@@ -3,6 +3,7 @@ package Win32::Backup::Robocopy;
 use 5.010;
 use strict;
 use warnings;
+use POSIX qw();
 use Carp;
 use File::Spec;
 use File::Path qw(make_path);
@@ -10,7 +11,7 @@ use JSON::PP; # only this support sort_by(custom_func)
 use Capture::Tiny qw(capture);
 use DateTime::Tiny;
 use Algorithm::Cron;
-our $VERSION = 7;
+our $VERSION = 8;
 
 sub new {
 	my $class = shift;
@@ -69,7 +70,7 @@ sub run	{
 	# modify destination if history = 1
 	my $date_folder;
 	if ( $self->{history} ){
-		$date_folder = DateTime::Tiny->now()=~s/:/-/gr;
+		($date_folder = DateTime::Tiny->now() )=~tr/:/-/;
 		$dst =  File::Spec->catdir( $dst, $date_folder );		
 	}
 	# some verbose output
@@ -444,8 +445,13 @@ sub _validate_upto{
 	}
 	# is astring as accepted by DateTime::Tiny
 	elsif ( $time =~ /^\d{4}-\d{2}-\d{2}T\d{2}[\-:]\d{2}[\-:]\d{2}$/ ){
-		$time =~ s/T(\d{2})[\-:](\d{2})[\-:](\d{2})$/T$1:$2:$3/;
-		return DateTime::Tiny->from_string( $time )->DateTime->epoch;
+		#$time =~ s/T(\d{2})[\-:](\d{2})[\-:](\d{2})$/T$1:$2:$3/;
+		$time =~ /^(\d{4})-(\d{2})-(\d{2})T(\d{2})[\-:](\d{2})[\-:](\d{2})$/;
+		warn "POSIX\n\t$time\n\t$6, $5, $4, $3, $2-1, $1-1900\n".
+			"\t".POSIX::mktime( $6, $5, $4, $3, $2-1, $1-1900)."\n".
+			scalar localtime(POSIX::mktime( $6, $5, $4, $3, $2-1, $1-1900));
+		return POSIX::mktime( $6, $5, $4, $3, $2-1, $1-1900);
+		#return DateTime::Tiny->from_string( $time )->DateTime->epoch;
 	}
 	# is a DateTime::Tiny object
 	elsif ( ref $time eq 'DateTime::Tiny' ){
