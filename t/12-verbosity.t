@@ -60,6 +60,7 @@ my ($out, $err, @res) = capture {
 		$bkp->restore(from=> $completedest, to => $tbasedir, 
 		verbose => 1);
 };
+print "OUTPUT:[$out]\n";
 ok (3 == (split "\n", $out), "4 lines expected with verbosity = 1");
 
 # verbosity 2
