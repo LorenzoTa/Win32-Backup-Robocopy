@@ -51,9 +51,9 @@ ok ( Win32::Backup::Robocopy::_validate_upto( $datetimetiny ) eq $epoch,
 
 # DateTime object
 SKIP: {
-		local $@;
-        eval { require DateTime };
-        skip "DateTime not installed", 1 if $@;
+		#local $@;
+        eval { require DateTime; 1 } or skip "DateTime not installed";
+        #skip "DateTime not installed", 1 if $@;
         my $datetime = $datetimetiny->DateTime;
         ok ( Win32::Backup::Robocopy::_validate_upto( $datetime ) eq $epoch,
 			"_validate_upto ok with DateTime object");

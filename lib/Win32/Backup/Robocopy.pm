@@ -457,9 +457,9 @@ sub _validate_upto{
 		return Time::Piece->strptime ($time, '%Y-%m-%dT%H:%M:%S')->epoch;		
 	}
 	# is a DateTime::Tiny object
-	elsif ( ref $time eq 'DateTime::Tiny' ){
-		return $time->DateTime->epoch;
-	}
+	# elsif ( ref $time eq 'DateTime::Tiny' ){
+		# return $time->DateTime->epoch;
+	# }
 	# is a DateTime object
 	elsif ( ref $time eq 'DateTime' ){
 		return $time->epoch;
