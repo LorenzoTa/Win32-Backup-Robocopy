@@ -172,13 +172,12 @@ sub job {
 	# or not
 	else{ 
 			$$jobconf{ next_time } = $cron->next_time(time);
-print "DEBUG: ",
-			scalar CORE::localtime($cron->next_time(time)),
-			"\nREF:\t",
-			ref (scalar CORE::localtime($cron->next_time(time))),
-			"\n";
-			$$jobconf{ next_time_descr } = scalar CORE::localtime($cron->next_time(time));
-	
+
+			# using CORE::localtime because of Time::Piece
+			# This module replaces the standard localtime and gmtime functions with
+			# implementations that return objects.
+			# And in this way they cannot be serialized in JSON
+			$$jobconf{ next_time_descr } = scalar CORE::localtime($cron->next_time(time));	
 	}	
 	# JSON for the job 
 	my $json = JSON::PP->new->utf8->pretty->canonical;
@@ -233,12 +232,16 @@ sub runjobs{
                 archiveremove => $job->{archiveremove},
 				subfolders => $job->{subfolders},
 				emptysubfolders => $job->{emptysubfolders},
-				files => $job->{files},
-				#noprogress => $job->{noprogress},				
+				files => $job->{files},			
 			);
 			# updating next_time* in the job
 			my $cron = _get_cron( $job->{ cron } );
 			$job->{ next_time } = $cron->next_time(time);
+			
+			# using CORE::localtime because of Time::Piece
+			# This module replaces the standard localtime and gmtime functions with
+			# implementations that return objects.
+			# And in this way they cannot be serialized in JSON
 			$job->{ next_time_descr } = scalar CORE::localtime($cron->next_time(time));
 			# write configuration
 			$self->_write_conf;
@@ -451,10 +454,7 @@ sub _validate_upto{
 	# is astring as accepted by DateTime::Tiny
 	elsif ( $time =~ /^\d{4}-\d{2}-\d{2}T\d{2}[\-:]\d{2}[\-:]\d{2}$/ ){
 		$time =~ s/T(\d{2})[\-:](\d{2})[\-:](\d{2})$/T$1:$2:$3/;
-		#my $epochstring = Time::Piece->strptime ($time, '%Y-%m-%dT%H:%M:%S')->epoch;
-		#return "$epochstring";
-		return Time::Piece->strptime ($time, '%Y-%m-%dT%H:%M:%S')->epoch;
-		#return DateTime::Tiny->from_string( $time )->DateTime->epoch;		
+		return Time::Piece->strptime ($time, '%Y-%m-%dT%H:%M:%S')->epoch;		
 	}
 	# is a DateTime::Tiny object
 	elsif ( ref $time eq 'DateTime::Tiny' ){
@@ -566,7 +566,6 @@ sub _load_conf{
 }
 sub _write_conf{
 	my $self = shift;
-		#use Data::Dump; dd $self;
 	my $json = JSON::PP->new->utf8->pretty->canonical;
 					#$json->allow_blessed();
 	$json->sort_by( \&_ordered_json );
