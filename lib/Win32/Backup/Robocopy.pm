@@ -363,7 +363,8 @@ sub restore{
 			# check if directory name exceeds 'upto' param
 			if ( $arg{upto} ){
 				(my $sanitized_src = $src ) =~ s/T(\d{2})[\-:](\d{2})[\-:](\d{2})$/T$1:$2:$3/; 
-				my $current = DateTime::Tiny->from_string( $sanitized_src )->DateTime->epoch;
+				#my $current = DateTime::Tiny->from_string( $sanitized_src )->DateTime->epoch;
+				my $current = Time::Piece->strptime ($sanitized_src, '%Y-%m-%dT%H:%M:%S')->epoch;
 				if ( $current > $arg{upto} ){
 				print "[$src] and following folders skipped because newer than: ".
 							(scalar gmtime( $arg{upto} ))."\n" if $self->{verbose};
@@ -443,11 +444,11 @@ sub _validate_upto{
 					# a DateTime object
 					ref $time eq 'DateTime'				
 			){
-				croak "parameter 'upto' must be: seconds from epoch or a ".
+				croak "parameter 'upto' must be: seconds since epoch or a ".
 						"string in the form: YYYY-MM-DDTHH-MM-SS or ".
 						"a DateTime::Tiny object or a DateTime object!";
 	}
-	# is a time string of seconds from epoch, let's hope..
+	# is a time string of seconds since epoch, let's hope..
 	if ( $time =~ /^\d+$/ ){
 		return $time;
 	}
@@ -457,9 +458,9 @@ sub _validate_upto{
 		return Time::Piece->strptime ($time, '%Y-%m-%dT%H:%M:%S')->epoch;		
 	}
 	# is a DateTime::Tiny object
-	# elsif ( ref $time eq 'DateTime::Tiny' ){
-		# return $time->DateTime->epoch;
-	# }
+	elsif ( ref $time eq 'DateTime::Tiny' ){
+		return $time->DateTime->epoch;
+	}
 	# is a DateTime object
 	elsif ( ref $time eq 'DateTime' ){
 		return $time->epoch;
@@ -567,7 +568,6 @@ sub _load_conf{
 sub _write_conf{
 	my $self = shift;
 	my $json = JSON::PP->new->utf8->pretty->canonical;
-					#$json->allow_blessed();
 	$json->sort_by( \&_ordered_json );
 	# verbosity
 	if ( $self->{ verbose } and -e $self->{ conf } ){
