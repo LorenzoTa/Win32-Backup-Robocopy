@@ -3,7 +3,7 @@ package Win32::Backup::Robocopy;
 use 5.010;
 use strict;
 use warnings;
-use POSIX qw();
+#use Time::Piece;
 use Carp;
 use File::Spec;
 use File::Path qw(make_path);
@@ -171,7 +171,7 @@ sub job {
 	}
 	# or not
 	else{ 
-			$$jobconf{ next_time } = $cron->next_time(time);
+			$$jobconf{ next_time } = $cron->next_time(time);						
 			$$jobconf{ next_time_descr } = scalar localtime($cron->next_time(time));
 	
 	}	
@@ -445,13 +445,12 @@ sub _validate_upto{
 	}
 	# is astring as accepted by DateTime::Tiny
 	elsif ( $time =~ /^\d{4}-\d{2}-\d{2}T\d{2}[\-:]\d{2}[\-:]\d{2}$/ ){
-		#$time =~ s/T(\d{2})[\-:](\d{2})[\-:](\d{2})$/T$1:$2:$3/;
-		$time =~ /^(\d{4})-(\d{2})-(\d{2})T(\d{2})[\-:](\d{2})[\-:](\d{2})$/;
-		warn "POSIX\n\t$time\n\t$6, $5, $4, $3, $2-1, $1-1900\n".
-			"\t".POSIX::mktime( $6, $5, $4, $3, $2-1, $1-1900)."\n".
-			scalar localtime(POSIX::mktime( $6, $5, $4, $3, $2-1, $1-1900));
-		return POSIX::mktime( $6, $5, $4, $3, $2-1, $1-1900);
-		#return DateTime::Tiny->from_string( $time )->DateTime->epoch;
+		$time =~ s/T(\d{2})[\-:](\d{2})[\-:](\d{2})$/T$1:$2:$3/;
+		#my $epochstring = Time::Piece->strptime ($time, '%Y-%m-%dT%H:%M:%S')->epoch;
+		#return "$epochstring";
+		return DateTime::Tiny->from_string( $time )->DateTime->epoch;
+		
+		
 	}
 	# is a DateTime::Tiny object
 	elsif ( ref $time eq 'DateTime::Tiny' ){
@@ -563,7 +562,9 @@ sub _load_conf{
 }
 sub _write_conf{
 	my $self = shift;
+		use Data::Dump; dd $self;
 	my $json = JSON::PP->new->utf8->pretty->canonical;
+					$json->allow_blessed();
 	$json->sort_by( \&_ordered_json );
 	# verbosity
 	if ( $self->{ verbose } and -e $self->{ conf } ){
