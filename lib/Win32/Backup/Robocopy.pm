@@ -172,11 +172,11 @@ sub job {
 	# or not
 	else{ 
 			$$jobconf{ next_time } = $cron->next_time(time);
-# print "DEBUG: ",
-			# scalar localtime($cron->next_time(time)),
-			# "\nREF:\t",
-			# ref (scalar localtime($cron->next_time(time))),
-			# "\n";
+print "DEBUG: ",
+			scalar CORE::localtime($cron->next_time(time)),
+			"\nREF:\t",
+			ref (scalar CORE::localtime($cron->next_time(time))),
+			"\n";
 			$$jobconf{ next_time_descr } = scalar CORE::localtime($cron->next_time(time));
 	
 	}	
@@ -239,7 +239,7 @@ sub runjobs{
 			# updating next_time* in the job
 			my $cron = _get_cron( $job->{ cron } );
 			$job->{ next_time } = $cron->next_time(time);
-			$job->{ next_time_descr } = scalar localtime($cron->next_time(time));
+			$job->{ next_time_descr } = scalar CORE::localtime($cron->next_time(time));
 			# write configuration
 			$self->_write_conf;
 		}
@@ -568,7 +568,7 @@ sub _write_conf{
 	my $self = shift;
 		#use Data::Dump; dd $self;
 	my $json = JSON::PP->new->utf8->pretty->canonical;
-					$json->allow_blessed();
+					#$json->allow_blessed();
 	$json->sort_by( \&_ordered_json );
 	# verbosity
 	if ( $self->{ verbose } and -e $self->{ conf } ){
