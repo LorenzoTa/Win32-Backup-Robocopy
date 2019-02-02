@@ -747,7 +747,7 @@ Win32::Backup::Robocopy - a simple backup solution using robocopy
             destination	=> 'x:\backup',         # '.' if not specified
             history	=> 1,                         
     );
-    my( $stdout, $stderr, $exit, $exitstr, $createdfolder ) = $bkp->run();
+    my( $stdout, $stderr\, $exit, $exitstr, $createdfolder ) = $bkp->run();
 
 	
     # JOB mode 
@@ -1191,7 +1191,7 @@ all contained in C<X:\external\photos> and you discover that the day 7 of Januar
 	
 and you'll have restored only the photos backed up in the firsts three folder and not in the fourth one.
 
-The C<upto> parameter can be: 1) a string as used to create folders by history backups, like in the above example C<2019-01-06T20-29-10> or 2) a string as created by L<DateTime::Tiny> C<as_string> method, ie C<2019-01-06T20:29:10> or 3) seconds since epoch like C<1546806550> or 4) a L<DateTime::Tiny> object or 5) a L<DateTime> object.
+The C<upto> parameter can be: 1) a string as used to create folders by history backups, like in the above example C<2019-01-06T20-29-10> or 2) a string as created by L<DateTime::Tiny> C<as_string> method (ISO 8601) ie C<2019-01-06T20:29:10> or 3) seconds since epoch like C<1546806550> or 4) a L<DateTime::Tiny> object or 5) a L<DateTime> object.
 
 
 Pay attention to what is said in the L<DateTime::Tiny> documentation about time zones and locale: in other words the conversion will be using C<gmtime> and not C<localtime> see the following example to demonstrate it:
