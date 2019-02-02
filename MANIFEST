@@ -1,7 +1,7 @@
 Changes
 lib/Win32/Backup/Robocopy.pm
 MANIFEST			This list of files
-MANIFEST.bak
+Makefile.PL
 MANIFEST.SKIP
 README
 README.md
