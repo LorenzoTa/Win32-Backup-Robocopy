@@ -27,7 +27,7 @@ WriteMakefile(
         'Test::More' 		=> '0',
 		'Carp'				=> '0',
 		'File::Spec'		=> '0',
-		'File::Path'		=> '0',
+		'File::Path'		=> '2.16', # failed tests with 2.8
 		'JSON::PP'			=> '0',
 		'Capture::Tiny'		=> '0',
 		'Algorithm::Cron'	=> '0',
