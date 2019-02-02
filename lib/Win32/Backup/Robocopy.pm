@@ -9,7 +9,7 @@ use File::Spec;
 use File::Path qw(make_path);
 use JSON::PP; # only this support sort_by(custom_func)
 use Capture::Tiny qw(capture);
-use DateTime::Tiny;
+#use DateTime::Tiny;
 use Algorithm::Cron;
 our $VERSION = 8;
 
@@ -70,7 +70,9 @@ sub run	{
 	# modify destination if history = 1
 	my $date_folder;
 	if ( $self->{history} ){
-		($date_folder = DateTime::Tiny->now() )=~tr/:/-/;
+		#($date_folder = DateTime::Tiny->now() )=~tr/:/-/;
+		my $tnow =localtime; 
+		$date_folder = join 'T', $tnow->ymd, $tnow->hms('-');
 		$dst =  File::Spec->catdir( $dst, $date_folder );		
 	}
 	# some verbose output
