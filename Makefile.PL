@@ -30,7 +30,6 @@ WriteMakefile(
 		'File::Path'		=> '0',
 		'JSON::PP'			=> '0',
 		'Capture::Tiny'		=> '0',
-		'DateTime::Tiny'	=> '0',
 		'Algorithm::Cron'	=> '0',
 		'Time::Piece'		=> '0',
     },

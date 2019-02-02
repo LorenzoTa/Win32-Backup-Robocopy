@@ -43,17 +43,16 @@ ok ( Win32::Backup::Robocopy::_validate_upto( '2008-09-21T20-02:00' ) eq $epoch,
 ok ( Win32::Backup::Robocopy::_validate_upto( '2008-09-21T20-02-00' ) eq $epoch,
 	"_validate_upto ok with valid string 4");
 
-# DateTime::Tiny object
-my $datetimetiny = DateTime::Tiny->from_string( '2008-09-21T20:02:00' );
 
-ok ( Win32::Backup::Robocopy::_validate_upto( $datetimetiny ) eq $epoch,
-	"_validate_upto ok with DateTime::Tiny object");
-
-# DateTime object
 SKIP: {
-		#local $@;
+		# DateTime::Tiny object
+        eval { require DateTime::Tiny; 1 } or skip "DateTime::Tiny not installed";
+        my $datetimetiny = DateTime::Tiny->from_string( '2008-09-21T20:02:00' );
+        ok ( Win32::Backup::Robocopy::_validate_upto( $datetimetiny ) eq $epoch,
+			"_validate_upto ok with DateTime::Tiny object");
+		
+		# DateTime object
         eval { require DateTime; 1 } or skip "DateTime not installed";
-        #skip "DateTime not installed", 1 if $@;
         my $datetime = $datetimetiny->DateTime;
         ok ( Win32::Backup::Robocopy::_validate_upto( $datetime ) eq $epoch,
 			"_validate_upto ok with DateTime object");

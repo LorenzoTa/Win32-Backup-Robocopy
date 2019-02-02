@@ -9,8 +9,8 @@ use File::Spec;
 use File::Path qw(make_path);
 use JSON::PP; # only this support sort_by(custom_func)
 use Capture::Tiny qw(capture);
-use DateTime::Tiny;
 use Algorithm::Cron;
+
 our $VERSION = 8;
 
 sub new {
@@ -30,8 +30,6 @@ sub new {
 				conf 		=> $arg{conf} ,
 				jobs 		=> $jobs // [],
 				verbose 	=> $arg{verbose},
-				#debug		=> $arg {debug},
-				#writelog	=> $arg {writelog},
 			}, $class;	
 	}
 	# RUN mode: the $bkp object will contains a serie
@@ -43,9 +41,7 @@ sub new {
 				dst 		=> $arg{dst},
 				history 	=> $arg{history} // 0,
 				verbose 	=> $arg{verbose} // 0,
-				#debug		=> $arg{debug} // 0,
 				waitdrive	=> $arg{waitdrive} // 0,
-				#writelog	=> $arg {writelog} // 1,
 	}, $class;
 }
 
@@ -70,7 +66,9 @@ sub run	{
 	# modify destination if history = 1
 	my $date_folder;
 	if ( $self->{history} ){
-		($date_folder = DateTime::Tiny->now() )=~tr/:/-/;
+		# is now an object from Time::Piece
+		my $tnow = localtime; 
+		$date_folder = join 'T', $tnow->ymd, $tnow->hms('-');
 		$dst =  File::Spec->catdir( $dst, $date_folder );		
 	}
 	# some verbose output
@@ -174,8 +172,8 @@ sub job {
 			$$jobconf{ next_time } = $cron->next_time(time);
 
 			# using CORE::localtime because of Time::Piece
-			# This module replaces the standard localtime and gmtime functions with
-			# implementations that return objects.
+			# "This module replaces the standard localtime and gmtime functions with
+			# implementations that return objects."
 			# And in this way they cannot be serialized in JSON
 			$$jobconf{ next_time_descr } = scalar CORE::localtime($cron->next_time(time));	
 	}	
@@ -222,9 +220,7 @@ sub runjobs{
 				dst 		=> $job->{dst},
 				history 	=> $job->{history} // 0,
 				verbose 	=> $job->{verbose} // 0,
-				#debug		=> $job->{debug} // 0,
 				waitdrive	=> $job->{waitdrive} // 0,
-				#writelog	=> $job->{writelog} // 1,
 			},ref $self;
 			
 			$bkp->run( 
@@ -239,8 +235,8 @@ sub runjobs{
 			$job->{ next_time } = $cron->next_time(time);
 			
 			# using CORE::localtime because of Time::Piece
-			# This module replaces the standard localtime and gmtime functions with
-			# implementations that return objects.
+			# "This module replaces the standard localtime and gmtime functions with
+			# implementations that return objects."
 			# And in this way they cannot be serialized in JSON
 			$job->{ next_time_descr } = scalar CORE::localtime($cron->next_time(time));
 			# write configuration
@@ -283,7 +279,6 @@ sub listjobs{
 
 sub restore{
 	my $self = shift;
-	#my %arg = @_;
 	my %arg = _default_restore_params(@_);
 	for ( 'from', 'to' ){
 		croak "restore need a $_ param!" unless $arg{$_};
@@ -312,11 +307,8 @@ sub restore{
 	my @extra =  ref $arg{extraparam} eq 'ARRAY' 	?
 					@{ $arg{extraparam} }			:
 					split /\s+/, $arg{extraparam} // ''	;
-	#my @robo_params = ( '*.*', '/S', '/E', '/R:0', '/W:0', @extra ); #'/DCOPY:T', '/SEC',
 	my @robo_params = grep { defined $_ } 
-						# parameters managed by new
-						#$src, $dst,
-						# parameters managed by run
+						# parameters as in run
 						$arg{files},
 						( $arg{subfolders} ? '/S' : undef ),
 						( $arg{emptysubfolders} ? '/E' : undef ),
@@ -363,7 +355,6 @@ sub restore{
 			# check if directory name exceeds 'upto' param
 			if ( $arg{upto} ){
 				(my $sanitized_src = $src ) =~ s/T(\d{2})[\-:](\d{2})[\-:](\d{2})$/T$1:$2:$3/; 
-				#my $current = DateTime::Tiny->from_string( $sanitized_src )->DateTime->epoch;
 				my $current = Time::Piece->strptime ($sanitized_src, '%Y-%m-%dT%H:%M:%S')->epoch;
 				if ( $current > $arg{upto} ){
 				print "[$src] and following folders skipped because newer than: ".
@@ -448,11 +439,12 @@ sub _validate_upto{
 						"string in the form: YYYY-MM-DDTHH-MM-SS or ".
 						"a DateTime::Tiny object or a DateTime object!";
 	}
-	# is a time string of seconds since epoch, let's hope..
+	# it is a time string of seconds since epoch, let's hope..
 	if ( $time =~ /^\d+$/ ){
 		return $time;
 	}
-	# is astring as accepted by DateTime::Tiny
+	# it is a string similar to ISO 8601 
+	# but possible '-' instead of ':' between hours, minutes and seconds
 	elsif ( $time =~ /^\d{4}-\d{2}-\d{2}T\d{2}[\-:]\d{2}[\-:]\d{2}$/ ){
 		$time =~ s/T(\d{2})[\-:](\d{2})[\-:](\d{2})$/T$1:$2:$3/;
 		return Time::Piece->strptime ($time, '%Y-%m-%dT%H:%M:%S')->epoch;		
@@ -532,7 +524,6 @@ sub _waitdrive{
 sub _load_conf{ 
 	my $file = shift;
 	return [] unless -e -r -f $file;
-	#print "loading configuration in $file\n";
 	# READ the configuration 
 	my $json = JSON::PP->new->utf8->pretty->canonical;
 	open my $fh, '<', $file or croak "unable to read $file";
@@ -596,40 +587,35 @@ sub _get_cron{
 												base => 'local',
 												crontab => $crontab 
 											)
-		};
-		if ( $@ ){
-			croak "specify a valid cron entry as cron parameter!\n".
-					"\tAlgorithm::Cron error is: $@" unless $cron;			
-		}
+		} or croak "specify a valid cron entry as cron parameter!\n".
+					"\tAlgorithm::Cron error is: $@";			
 	} 
 	# end of safe scope for $@	
 	return $cron;
 }
 sub _ordered_json{
 	my %order = (
-							# USED IN:
-			name 	=> 0, 	# new
-			src		=> 1, 	# new
-			dst		=> 2, 	# new
-			files	=> 3, 	# run
-			history	=> 4, 	# new
+									# USED IN:
+			name 			=> 0, 	# new
+			src				=> 1, 	# new
+			dst				=> 2, 	# new
+			files			=> 3, 	# run
+			history			=> 4, 	# new
 			
-			cron	=> 5, 		# job
-			next_time=> 6,		# job RO
-			next_time_descr=> 7,# job RO
-			first_time_run=>7.5,# job
+			cron			=> 5, 	# job
+			next_time		=> 6, 	# job RO
+			next_time_descr	=> 7, 	# job RO
+			first_time_run	=> 8, 	# job
 			
-			archive=> 8,		 # run
-			archiveremove=> 9,	 # run
-			subfolders=> 10,	 # run
-			emptysubfolders=> 11,# run
+			archive			=> 9, 	# run
+			archiveremove	=> 10,	# run
+			subfolders		=> 11,	# run
+			emptysubfolders	=> 12,	# run
 			
-			retries  => 12,      # run
-			wait => 13,          # run
-			
-			waitdrive => 14,	# new
-			verbose	=> 15, 		# new
-			#debug	=>	15, 	# new
+			retries  		=> 13,	# run
+			wait 			=> 14,	# run			
+			waitdrive 		=> 15,	# new
+			verbose			=> 16,	# new
 	);
 	($order{$JSON::PP::a} // 99) <=> ($order{$JSON::PP::b} // 99)
 }
@@ -637,7 +623,6 @@ sub _default_new_params{
 	my %opt = @_;
 	$opt{history} //= 0;
 	$opt{verbose} //= 0;
-	#$opt{debug} //= 0;
 	$opt{waitdrive} //= 0;
 	return %opt;
 }
