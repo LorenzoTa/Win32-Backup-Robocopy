@@ -9,6 +9,8 @@ use File::Spec;
 sub create_dirs{
 	my $base = shift // 'test_backup';
 	my $tbasedir = File::Spec->catdir(File::Spec->tmpdir(),$base);
+	# clean before any other action
+	clean_all($tbasedir) if -d $tbasedir;
 	my $tsrc = File::Spec->catdir( $tbasedir,'src');
 	my $tdst = File::Spec->catdir( $tbasedir,'dst');
 	foreach  my $dir ($tbasedir,$tsrc,$tdst){
