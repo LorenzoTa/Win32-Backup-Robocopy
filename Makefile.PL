@@ -23,6 +23,7 @@ WriteMakefile(
     BUILD_REQUIRES => {
 		'Win32::File'	=> '0',
 		'Test::Exception' => '0',
+		'File::Path'	=> '0',
         
     },
     PREREQ_PM => {
