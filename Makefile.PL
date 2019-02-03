@@ -21,6 +21,8 @@ WriteMakefile(
         'ExtUtils::MakeMaker' => '0',
     },
     BUILD_REQUIRES => {
+		'Win32::File'	=> '0',
+		'Test::Exception' => '0',
         
     },
     PREREQ_PM => {

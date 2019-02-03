@@ -11,7 +11,7 @@ use JSON::PP; # only this support sort_by(custom_func)
 use Capture::Tiny qw(capture);
 use Algorithm::Cron;
 
-our $VERSION = 8;
+our $VERSION = 9;
 
 sub new {
 	my $class = shift;
@@ -747,7 +747,7 @@ Win32::Backup::Robocopy - a simple backup solution using robocopy
             destination	=> 'x:\backup',         # '.' if not specified
             history	=> 1,                         
     );
-    my( $stdout, $stderr\, $exit, $exitstr, $createdfolder ) = $bkp->run();
+    my( $stdout, $stderr, $exit, $exitstr, $createdfolder ) = $bkp->run();
 
 	
     # JOB mode 
