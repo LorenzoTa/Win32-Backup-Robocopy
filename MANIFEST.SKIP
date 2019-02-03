@@ -1,6 +1,6 @@
 .git
 Makefile$
-Makefile.old
+*.old
 Build
 Build.bat
 META.*
