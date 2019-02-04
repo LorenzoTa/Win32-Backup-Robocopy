@@ -69,26 +69,11 @@ if( not ok ( $exit == 0, "no new file present" ) ) {
 	diag "stdout : $stdout\n";
 	diag "stdrerr: $stderr\n";
 	diag "exit   : $exit\n";
-	diag "string : $exitstr\n";	
+	diag "string : $exitstr\n";
+	
+	bkpscenario::check_robocopy_version('verbose');
+
 }
-
-# C:\WINDOWS\system32>wmic datafile where name='c:\\windows\\system32\\robocopy.exe' get version
-# Version
-# 10.0.17134.1
-
-# wikipedia 
-# 1.71	4.0.1.71	1997	Windows NT Resource Kit	
-# 1.95	4.0.1.95	1999	Windows 2000 Resource Kit	
-# 1.96	4.0.1.96	1999	Windows 2000 Resource Kit	© 1995-1997
-# XP010	5.1.1.1010	2003	Windows 2003 Resource Kit	
-# XP026	5.1.2600.26	2005	Downloaded with Robocopy GUI v.3.1.2; /DCOPY:T option introduced	
-# XP027	5.1.10.1027	2008	Bundled with Windows Vista, Server 2008, Windows 7, Server 2008r2	© 1995-2004
-# 6.1	6.1.7601	2009	KB2639043	© 2009
-# 6.2	6.2.9200	2012	Bundled with Windows 8	© 2012
-# 6.3	6.3.9600	2013	Bundled with Windows 8.1	© 2013
-# 10.0	10.0.10240.16384	2015	Bundled with Windows 10	© 2015
-# 10.0.16	10.0.16299.15	2017	Bundled with Windows 10 1709	© 2017
-# 10.0.17	10.0.17763.1	2018	Bundled with Windows 10 1809	© 2018
 
 # add some line to file
 # check $exit code: now has to be 1 as for modified file
@@ -100,7 +85,7 @@ ok ( $exit == 1, "updated file $file1 correctly backed up" );
 # try to backuk *.doc
 ($stdout, $stderr, $exit, $exitstr) = $bkp->run( files => '*.doc' );
 #ok ( $exit == 0, "no *.doc files to backed up" );
-if( not ok ( $exit == 55, "no *.doc files to backed up" ) ) {
+if( not ok ( $exit == 0, "no *.doc files to backed up" ) ) {
 	diag "basedir : $tbasedir\n",
 		 "tempsrc : $tsrc\n",
 		 "tempdst : $tdst\n",
@@ -109,7 +94,10 @@ if( not ok ( $exit == 55, "no *.doc files to backed up" ) ) {
 	diag "stdout : $stdout\n";
 	diag "stdrerr: $stderr\n";
 	diag "exit   : $exit\n";
-	diag "string : $exitstr\n";	
+	diag "string : $exitstr\n";
+
+	bkpscenario::check_robocopy_version('verbose');
+	
 }
 
 # check archive attribute was removed from the file
@@ -117,7 +105,18 @@ my $attr;
 my $getattrexit = GetAttributes( File::Spec->catfile($tsrc, $file1), $attr );
 BAIL_OUT( "impossible to retrieve attributes of $file1" ) unless $getattrexit;
 my $archiveset = $attr & ARCHIVE;
-cmp_ok($archiveset, '==', 0, "ARCHIVE bit not present in $file1");
+#cmp_ok($archiveset, '==', 0, "ARCHIVE bit not present in $file1");
+if( not cmp_ok($archiveset, '==', 0, "ARCHIVE bit not present in $file1") ) {
+	diag "basedir : $tbasedir\n",
+		 "tempsrc : $tsrc\n",
+		 "tempdst : $tdst\n",
+		 "file    : $file1\n",
+		 "attr    : $attr\n",
+		 "archive : $archiveset\n";
+
+	bkpscenario::check_robocopy_version('verbose');
+	
+}
 
 # modify another time the file and do an HISTORY backup
 $tfh1 = bkpscenario::open_file($tsrc,$file1);
