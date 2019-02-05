@@ -30,16 +30,16 @@ sub check_robocopy_version{
 			#( from wikipedia ) 
 			# 1.71	4.0.1.71	1997	Windows NT Resource Kit	
 			# 1.95	4.0.1.95	1999	Windows 2000 Resource Kit	
-			# 1.96	4.0.1.96	1999	Windows 2000 Resource Kit	© 1995-1997
+			# 1.96	4.0.1.96	1999	Windows 2000 Resource Kit
 			# XP010	5.1.1.1010	2003	Windows 2003 Resource Kit	
 			# XP026	5.1.2600.26	2005	Downloaded with Robocopy GUI v.3.1.2; /DCOPY:T option introduced	
-			# XP027	5.1.10.1027	2008	Bundled with Windows Vista, Server 2008, Windows 7, Server 2008r2	© 1995-2004
-			# 6.1	6.1.7601	2009	KB2639043	© 2009
-			# 6.2	6.2.9200	2012	Bundled with Windows 8	© 2012
-			# 6.3	6.3.9600	2013	Bundled with Windows 8.1	© 2013
-			# 10.0	10.0.10240.16384	2015	Bundled with Windows 10	© 2015
-			# 10.0.16	10.0.16299.15	2017	Bundled with Windows 10 1709	© 2017
-			# 10.0.17	10.0.17763.1	2018	Bundled with Windows 10 1809	© 2018
+			# XP027	5.1.10.1027	2008	Bundled with Windows Vista, Server 2008, Windows 7, Server 2008r2
+			# 6.1	6.1.7601	2009	KB2639043
+			# 6.2	6.2.9200	2012	Bundled with Windows 8
+			# 6.3	6.3.9600	2013	Bundled with Windows 8.1
+			# 10.0	10.0.10240.16384	2015	Bundled with Windows 10
+			# 10.0.16	10.0.16299.15	2017	Bundled with Windows 10 1709
+			# 10.0.17	10.0.17763.1	2018	Bundled with Windows 10 1809
 			if ( $verbose ){
 				note "BUGGED VERSION at [$prog] ( XP026	5.1.2600.26 )" 
 					if $ret{$prog} eq '5.1.2600.26';
