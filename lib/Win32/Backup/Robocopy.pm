@@ -415,7 +415,7 @@ sub _wrap_robocpy{
 		print "executing [robocopy.exe ",(join ' ', @cmdargs, @safest),"]\n";
 	}
 	my ($stdout, $stderr, $exit) = capture {
-		system( 'ROBOCOPY.EXE', @cmdargs, @safest );
+		system( 'robocopy.exe', @cmdargs, @safest );
 	};
 	# !!
 	$exit = $exit>>8;
