@@ -17,7 +17,7 @@ my $verbose;
 foreach my $ver ( keys %$ret ){
 	
 	note "FOUND: $ver => ",$$ret{$ver} ? $$ret{$ver} : 'NOT DEFINED';
-	
+	BAIL_OUT( "Bugged version 5.1.2600.26 of robocopy.exe spotted" ) if $$ret{$ver} eq '5.1.2600.26'; 
 	unless ( $$ret{$ver} =~ /^6|^10/ ){
 		$verbose = 1;		
 	}

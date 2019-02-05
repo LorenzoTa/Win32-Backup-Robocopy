@@ -24,7 +24,10 @@ sub check_robocopy_version{
 			my ($first,$second,$third,$fourth) = Win32::GetFileVersion( $prog );
 			$ret{$prog} = join '.',$first,$second,$third,$fourth;
 	
-			# check bugged versions ( from wikipedia ) 
+			# check bugged version XP026 5.1.2600.26 
+			# see https://ss64.com/nt/robocopy.html 
+			# Version XP026 returns a success errorlevel even when it fails.
+			#( from wikipedia ) 
 			# 1.71	4.0.1.71	1997	Windows NT Resource Kit	
 			# 1.95	4.0.1.95	1999	Windows 2000 Resource Kit	
 			# 1.96	4.0.1.96	1999	Windows 2000 Resource Kit	© 1995-1997
