@@ -36,13 +36,12 @@ BEGIN{
 	unless ( -e -s $robocopy ){
 			die "given executable [$robocopy] is not here or is empty\n";
 	}
-	my $ret = system '$robocopy /? >nul 2>&1';
+	my $ret = system "$robocopy /? >nul 2>&1";
 	die "[$robocopy /? >nul 2>&1] did not returned the expected value" unless 16 == ($ret>>8);
 	# all went well..
 	print "[$robocopy] seems to be valid\n"
 }
 
-die;
 
 WriteMakefile(
     NAME             => 'Win32::Backup::Robocopy',
