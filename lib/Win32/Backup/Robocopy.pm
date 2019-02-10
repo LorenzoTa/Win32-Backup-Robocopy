@@ -837,7 +837,16 @@ In addition the C<job> method wants a crontab like entry to have the job run onl
 
 	
 	
-=head2 robocopy used defaults
+=head2 IMPORTANT used executable and robocopy.exe used defaults
+
+This module needs a valid copy of C<robocopy.exe> to be present in the system and to be available in the C<PATH>
+
+Alternatively a full path of an alternate copy of the C<robocopy.exe> executable can be specified using the C<ENV> variable C<PERL_ROBOCOPY_EXE> and in this case it will be given precedence over the copy present in the system.
+
+Unfortunately C<robocopy.exe> was distributed ove the years in many different versions and with doubious version numbers. Notably version C<5.1.2600.26> named C<XP026> is bugged in returning values: it returns a success errorlevel even when it fails.
+
+Because of the above the current module will try to spot the position and the version of C<robocopy.exe> and the build of the module will fail if no version are found or a bugged version is the only available.
+
 
 The C<robocopy.exe> program is full of options. This module is aimed to facilitate the backup task and so it assumes some defaults. Every call to C<robocopy.exe> made by C<run> and C<runjobs> if nothing is specified will result in:
 
