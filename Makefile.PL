@@ -33,7 +33,7 @@ BEGIN{
 			}
 		}	
 	}
-	unless ( -e -s $robocopy ){
+	unless ( defined $robocopy and -e -s $robocopy ){
 			die "given executable [$robocopy] is not here or is empty\n";
 	}
 	my $ret = system "$robocopy /? >nul 2>&1";
