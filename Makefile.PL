@@ -38,7 +38,7 @@ BEGIN{
 		die "robocopy.exe not found! ".
 				($ENV{PERL_ROBOCOPY_EXE} 	? 
 				'' 							: 
-				' (you can set environment variable PERL_ROBOCOPY_EXE to a custom path) ').
+				' (you can set environment variable PERL_ROBOCOPY_EXE to a custom path) ')
 		;
 	}
 	# check if exist
